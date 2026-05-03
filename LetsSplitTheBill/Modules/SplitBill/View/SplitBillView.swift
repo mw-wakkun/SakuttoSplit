@@ -20,7 +20,7 @@ struct SplitBillView: View {
                     totalAmountField
                     roundingUnitPicker
                 }
-
+                
                 // MARK: 参加者グループ
                 Section("参加者グループ") {
                     groupsList
@@ -31,6 +31,7 @@ struct SplitBillView: View {
                 Section("計算結果") {
                     resultsList
                     summarySection
+                    shareButton
                 }
             }
             .navigationTitle("サクッと割り勘")
@@ -114,7 +115,7 @@ private extension SplitBillView {
             }
             .buttonStyle(.borderless)
             .disabled(currentCount <= 1)
-
+            
             TextField("", text: group.countText)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
@@ -189,5 +190,36 @@ private extension SplitBillView {
                 .bold()
                 .foregroundColor(presenter.difference >= 0 ? .green : .red)
         }
+    }
+    
+    var shareButton: some View {
+        ShareLink(item: generateShareText()) {
+            Label("結果をLINE等でシェア", systemImage: "message.fill")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+        }
+        .listRowBackground(Color.green) // ボタンの背景を緑にする
+    }
+    
+    func generateShareText() -> String {
+        var text = "🍻 本日のお会計 🍻\n"
+        text += "総額: \(presenter.totalAmountText) 円\n"
+        text += "----------------\n"
+        
+        for result in presenter.calculationResults {
+            text += "\(result.name): 1人 \(result.amountPerPerson)円\n"
+        }
+        
+        text += "----------------\n"
+        if presenter.difference >= 0 {
+            text += "✨ 余剰金: \(abs(presenter.difference))円\n"
+        } else {
+            text += "⚠️ 不足金: \(abs(presenter.difference))円\n"
+        }
+        text += "※PayPay等で送金をお願いします！"
+        
+        return text
     }
 }
