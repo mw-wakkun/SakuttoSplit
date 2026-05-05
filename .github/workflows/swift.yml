@@ -14,15 +14,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: 'latest-stable'
-
     - name: Build and Test
       run: |
         xcodebuild test \
           -project SakuttoSplit.xcodeproj \
           -scheme SakuttoSplit \
-          -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+          -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
           -quiet
