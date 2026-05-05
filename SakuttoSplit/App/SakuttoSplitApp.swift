@@ -1,6 +1,6 @@
 //
-//  LetsSplitTheBillApp.swift
-//  LetsSplitTheBill
+//  SakuttoSplitApp.swift
+//  SakuttoSplit
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //
@@ -8,10 +8,10 @@
 import SwiftUI
 
 @main
-struct LetsSplitTheBillApp: App {
+struct SakuttoSplitApp: App {
     var body: some Scene {
         WindowGroup {
-            SplitBillRouter.assembleModule()
+            SakuttoSplitRouter.assembleModule()
         }
     }
 }

@@ -1,6 +1,6 @@
 //
-//  SplitBillPresenter.swift
-//  LetsSplitTheBill
+//  SakuttoSplitPresenter.swift
+//  SakuttoSplit
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 
 /// Viewの状態管理と、Interactor/Routerとの橋渡しを行うプレゼンター
-final class SplitBillPresenter: ObservableObject {
+final class SakuttoSplitPresenter: ObservableObject {
     
     // MARK: - Input Properties (Published)
     
@@ -26,17 +26,17 @@ final class SplitBillPresenter: ObservableObject {
     
     // MARK: - Output Properties (Published)
     
-    @Published private(set) var calculationResults: [SplitBillInteractor.CalculationResult] = []
+    @Published private(set) var calculationResults: [SakuttoSplitInteractor.CalculationResult] = []
     @Published private(set) var collectedTotal: Int = 0
     @Published private(set) var difference: Int = 0
     
     // MARK: - Dependencies
     
-    private let interactor: SplitBillInteractor
+    private let interactor: SakuttoSplitInteractor
     
     // MARK: - Lifecycle
     
-    init(interactor: SplitBillInteractor) {
+    init(interactor: SakuttoSplitInteractor) {
         self.interactor = interactor
         calculate()
     }

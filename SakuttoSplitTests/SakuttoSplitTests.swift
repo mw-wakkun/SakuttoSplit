@@ -1,24 +1,24 @@
 //
-//  LetsSplitTheBillTests.swift
-//  LetsSplitTheBillTests
+//  SakuttoSplitTests.swift
+//  SakuttoSplitTests
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //
 
 import XCTest
 // アプリ本体のコードをテスト側から読み込めるようにする魔法のキーワード
-@testable import LetsSplitTheBill
+@testable import SakuttoSplit
 
 final class SplitBillInteractorTests: XCTestCase {
 
-    var interactor: SplitBillInteractor!
+    var interactor: SakuttoSplitInteractor!
 
     // MARK: - Setup
     
     // 各テストが実行される「直前」に毎回呼ばれる準備処理
     override func setUpWithError() throws {
         try super.setUpWithError()
-        interactor = SplitBillInteractor() // 新しい計算職人を準備
+        interactor = SakuttoSplitInteractor() // 新しい計算職人を準備
     }
 
     // 各テストが実行された「直後」に毎回呼ばれる片付け処理

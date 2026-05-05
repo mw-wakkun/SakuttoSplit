@@ -1,6 +1,6 @@
 //
-//  ContentView.swift
-//  LetsSplitTheBill
+//  SakuttoSplitView.swift
+//  SakuttoSplit
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //
@@ -8,9 +8,9 @@
 import SwiftUI
 
 /// 割り勘計算画面のメインView
-struct SplitBillView: View {
+struct SakuttoSplitView: View {
     
-    @ObservedObject var presenter: SplitBillPresenter
+    @ObservedObject var presenter: SakuttoSplitPresenter
     
     var body: some View {
         NavigationStack { // iOS 16以降の推奨
@@ -49,7 +49,7 @@ struct SplitBillView: View {
 
 // MARK: - View Components
 
-private extension SplitBillView {
+private extension SakuttoSplitView {
     
     var totalAmountField: some View {
         HStack {

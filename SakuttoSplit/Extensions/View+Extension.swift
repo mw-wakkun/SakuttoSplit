@@ -1,6 +1,6 @@
 //
 //  View+Extension.swift
-//  LetsSplitTheBill
+//  SakuttoSplit
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //

@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7F14AF8A2FA5DF4D00FEBF1E /* SplitBillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF882FA5DF4D00FEBF1E /* SplitBillView.swift */; };
-		7F14AF8B2FA5DF4D00FEBF1E /* LetsSplitTheBillApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF892FA5DF4D00FEBF1E /* LetsSplitTheBillApp.swift */; };
+		7F14AF8A2FA5DF4D00FEBF1E /* SakuttoSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */; };
+		7F14AF8B2FA5DF4D00FEBF1E /* SakuttoSplitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */; };
 		7F14AF8C2FA5DF4D00FEBF1E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */; };
 		7F14AF982FA5ED1B00FEBF1E /* AttendeeGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF962FA5EC2100FEBF1E /* AttendeeGroup.swift */; };
 		7F14AF992FA5ED3400FEBF1E /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF972FA5EC7A00FEBF1E /* View+Extension.swift */; };
-		7F14AF9B2FA5EDBA00FEBF1E /* SplitBillInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9A2FA5EDB700FEBF1E /* SplitBillInteractor.swift */; };
-		7F14AF9D2FA5EE2000FEBF1E /* SplitBillPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9C2FA5EE1700FEBF1E /* SplitBillPresenter.swift */; };
-		7F14AF9F2FA5EF8800FEBF1E /* SplitBillRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9E2FA5EF8600FEBF1E /* SplitBillRouter.swift */; };
+		7F14AF9B2FA5EDBA00FEBF1E /* SakuttoSplitInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */; };
+		7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */; };
+		7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,21 +29,21 @@
 
 /* Begin PBXFileReference section */
 		7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		7F14AF882FA5DF4D00FEBF1E /* SplitBillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitBillView.swift; sourceTree = "<group>"; };
-		7F14AF892FA5DF4D00FEBF1E /* LetsSplitTheBillApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetsSplitTheBillApp.swift; sourceTree = "<group>"; };
+		7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitView.swift; sourceTree = "<group>"; };
+		7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitApp.swift; sourceTree = "<group>"; };
 		7F14AF962FA5EC2100FEBF1E /* AttendeeGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendeeGroup.swift; sourceTree = "<group>"; };
 		7F14AF972FA5EC7A00FEBF1E /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
-		7F14AF9A2FA5EDB700FEBF1E /* SplitBillInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitBillInteractor.swift; sourceTree = "<group>"; };
-		7F14AF9C2FA5EE1700FEBF1E /* SplitBillPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitBillPresenter.swift; sourceTree = "<group>"; };
-		7F14AF9E2FA5EF8600FEBF1E /* SplitBillRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitBillRouter.swift; sourceTree = "<group>"; };
-		7F14AFA42FA5F82F00FEBF1E /* LetsSplitTheBillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LetsSplitTheBillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7FDD97CC2FA58CB10063A443 /* LetsSplitTheBill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LetsSplitTheBill.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitInteractor.swift; sourceTree = "<group>"; };
+		7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitPresenter.swift; sourceTree = "<group>"; };
+		7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitRouter.swift; sourceTree = "<group>"; };
+		7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SakuttoSplitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SakuttoSplit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		7F14AFA52FA5F82F00FEBF1E /* LetsSplitTheBillTests */ = {
+		7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LetsSplitTheBillTests;
+			path = SakuttoSplitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,7 +69,7 @@
 		7F14AF8D2FA5E85800FEBF1E /* App */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF892FA5DF4D00FEBF1E /* LetsSplitTheBillApp.swift */,
+				7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -93,12 +93,12 @@
 		7F14AF902FA5EAEB00FEBF1E /* Modules */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF912FA5EB4B00FEBF1E /* SplitBill */,
+				7F14AF912FA5EB4B00FEBF1E /* SakuttoSplit */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
 		};
-		7F14AF912FA5EB4B00FEBF1E /* SplitBill */ = {
+		7F14AF912FA5EB4B00FEBF1E /* SakuttoSplit */ = {
 			isa = PBXGroup;
 			children = (
 				7F14AF932FA5EB5E00FEBF1E /* Interactor */,
@@ -106,13 +106,13 @@
 				7F14AF942FA5EB6700FEBF1E /* Presenter */,
 				7F14AF922FA5EB5700FEBF1E /* View */,
 			);
-			path = SplitBill;
+			path = SakuttoSplit;
 			sourceTree = "<group>";
 		};
 		7F14AF922FA5EB5700FEBF1E /* View */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF882FA5DF4D00FEBF1E /* SplitBillView.swift */,
+				7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -120,7 +120,7 @@
 		7F14AF932FA5EB5E00FEBF1E /* Interactor */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF9A2FA5EDB700FEBF1E /* SplitBillInteractor.swift */,
+				7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */,
 			);
 			path = Interactor;
 			sourceTree = "<group>";
@@ -128,7 +128,7 @@
 		7F14AF942FA5EB6700FEBF1E /* Presenter */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF9C2FA5EE1700FEBF1E /* SplitBillPresenter.swift */,
+				7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */,
 			);
 			path = Presenter;
 			sourceTree = "<group>";
@@ -136,12 +136,12 @@
 		7F14AF952FA5EB6E00FEBF1E /* Router */ = {
 			isa = PBXGroup;
 			children = (
-				7F14AF9E2FA5EF8600FEBF1E /* SplitBillRouter.swift */,
+				7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */,
 			);
 			path = Router;
 			sourceTree = "<group>";
 		};
-		7F14AFAD2FA5F86600FEBF1E /* LetsSplitTheBill */ = {
+		7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */ = {
 			isa = PBXGroup;
 			children = (
 				7F14AF8D2FA5E85800FEBF1E /* App */,
@@ -150,14 +150,14 @@
 				7F14AF8E2FA5EACE00FEBF1E /* Entity */,
 				7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */,
 			);
-			path = LetsSplitTheBill;
+			path = SakuttoSplit;
 			sourceTree = "<group>";
 		};
 		7FDD97C32FA58CB10063A443 = {
 			isa = PBXGroup;
 			children = (
-				7F14AFAD2FA5F86600FEBF1E /* LetsSplitTheBill */,
-				7F14AFA52FA5F82F00FEBF1E /* LetsSplitTheBillTests */,
+				7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */,
+				7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */,
 				7FDD97CD2FA58CB10063A443 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,8 +165,8 @@
 		7FDD97CD2FA58CB10063A443 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7FDD97CC2FA58CB10063A443 /* LetsSplitTheBill.app */,
-				7F14AFA42FA5F82F00FEBF1E /* LetsSplitTheBillTests.xctest */,
+				7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */,
+				7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -174,9 +174,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		7F14AFA32FA5F82F00FEBF1E /* LetsSplitTheBillTests */ = {
+		7F14AFA32FA5F82F00FEBF1E /* SakuttoSplitTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7F14AFAA2FA5F82F00FEBF1E /* Build configuration list for PBXNativeTarget "LetsSplitTheBillTests" */;
+			buildConfigurationList = 7F14AFAA2FA5F82F00FEBF1E /* Build configuration list for PBXNativeTarget "SakuttoSplitTests" */;
 			buildPhases = (
 				7F14AFA02FA5F82F00FEBF1E /* Sources */,
 				7F14AFA12FA5F82F00FEBF1E /* Frameworks */,
@@ -188,18 +188,18 @@
 				7F14AFA92FA5F82F00FEBF1E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				7F14AFA52FA5F82F00FEBF1E /* LetsSplitTheBillTests */,
+				7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */,
 			);
-			name = LetsSplitTheBillTests;
+			name = SakuttoSplitTests;
 			packageProductDependencies = (
 			);
 			productName = LetsSplitTheBillTests;
-			productReference = 7F14AFA42FA5F82F00FEBF1E /* LetsSplitTheBillTests.xctest */;
+			productReference = 7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		7FDD97CB2FA58CB10063A443 /* LetsSplitTheBill */ = {
+		7FDD97CB2FA58CB10063A443 /* SakuttoSplit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7FDD97D72FA58CB20063A443 /* Build configuration list for PBXNativeTarget "LetsSplitTheBill" */;
+			buildConfigurationList = 7FDD97D72FA58CB20063A443 /* Build configuration list for PBXNativeTarget "SakuttoSplit" */;
 			buildPhases = (
 				7FDD97C82FA58CB10063A443 /* Sources */,
 				7FDD97C92FA58CB10063A443 /* Frameworks */,
@@ -209,11 +209,11 @@
 			);
 			dependencies = (
 			);
-			name = LetsSplitTheBill;
+			name = SakuttoSplit;
 			packageProductDependencies = (
 			);
 			productName = LetsSplitTheBill;
-			productReference = 7FDD97CC2FA58CB10063A443 /* LetsSplitTheBill.app */;
+			productReference = 7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -235,7 +235,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 7FDD97C72FA58CB10063A443 /* Build configuration list for PBXProject "LetsSplitTheBill" */;
+			buildConfigurationList = 7FDD97C72FA58CB10063A443 /* Build configuration list for PBXProject "SakuttoSplit" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -249,8 +249,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				7FDD97CB2FA58CB10063A443 /* LetsSplitTheBill */,
-				7F14AFA32FA5F82F00FEBF1E /* LetsSplitTheBillTests */,
+				7FDD97CB2FA58CB10063A443 /* SakuttoSplit */,
+				7F14AFA32FA5F82F00FEBF1E /* SakuttoSplitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -285,13 +285,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F14AF8A2FA5DF4D00FEBF1E /* SplitBillView.swift in Sources */,
+				7F14AF8A2FA5DF4D00FEBF1E /* SakuttoSplitView.swift in Sources */,
 				7F14AF982FA5ED1B00FEBF1E /* AttendeeGroup.swift in Sources */,
 				7F14AF992FA5ED3400FEBF1E /* View+Extension.swift in Sources */,
-				7F14AF9F2FA5EF8800FEBF1E /* SplitBillRouter.swift in Sources */,
-				7F14AF8B2FA5DF4D00FEBF1E /* LetsSplitTheBillApp.swift in Sources */,
-				7F14AF9D2FA5EE2000FEBF1E /* SplitBillPresenter.swift in Sources */,
-				7F14AF9B2FA5EDBA00FEBF1E /* SplitBillInteractor.swift in Sources */,
+				7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */,
+				7F14AF8B2FA5DF4D00FEBF1E /* SakuttoSplitApp.swift in Sources */,
+				7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */,
+				7F14AF9B2FA5EDBA00FEBF1E /* SakuttoSplitInteractor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,7 +300,7 @@
 /* Begin PBXTargetDependency section */
 		7F14AFA92FA5F82F00FEBF1E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7FDD97CB2FA58CB10063A443 /* LetsSplitTheBill */;
+			target = 7FDD97CB2FA58CB10063A443 /* SakuttoSplit */;
 			targetProxy = 7F14AFA82FA5F82F00FEBF1E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -322,7 +322,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LetsSplitTheBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LetsSplitTheBill";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SakuttoSplit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SakuttoSplit";
 			};
 			name = Debug;
 		};
@@ -342,7 +342,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LetsSplitTheBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LetsSplitTheBill";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SakuttoSplit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SakuttoSplit";
 			};
 			name = Release;
 		};
@@ -540,7 +540,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		7F14AFAA2FA5F82F00FEBF1E /* Build configuration list for PBXNativeTarget "LetsSplitTheBillTests" */ = {
+		7F14AFAA2FA5F82F00FEBF1E /* Build configuration list for PBXNativeTarget "SakuttoSplitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7F14AFAB2FA5F82F00FEBF1E /* Debug */,
@@ -549,7 +549,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7FDD97C72FA58CB10063A443 /* Build configuration list for PBXProject "LetsSplitTheBill" */ = {
+		7FDD97C72FA58CB10063A443 /* Build configuration list for PBXProject "SakuttoSplit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7FDD97D52FA58CB20063A443 /* Debug */,
@@ -558,7 +558,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7FDD97D72FA58CB20063A443 /* Build configuration list for PBXNativeTarget "LetsSplitTheBill" */ = {
+		7FDD97D72FA58CB20063A443 /* Build configuration list for PBXNativeTarget "SakuttoSplit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7FDD97D82FA58CB20063A443 /* Debug */,

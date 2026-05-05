@@ -1,6 +1,6 @@
 //
-//  SplitBillInteractor.swift
-//  LetsSplitTheBill
+//  SakuttoSplitInteractor.swift
+//  SakuttoSplit
 //
 //  Created by masafumi wakugawa on 2026/05/02.
 //
@@ -8,7 +8,7 @@
 import Foundation
 
 /// 割り勘の計算ロジック（ビジネスロジック）を専門に扱うインターラクター
-final class SplitBillInteractor {
+final class SakuttoSplitInteractor {
     
     /// 計算結果を保持するための構造体
     struct CalculationResult {
