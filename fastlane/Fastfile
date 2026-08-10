@@ -17,7 +17,15 @@ default_platform(:ios)
 
 platform :ios do
   desc "App Store Connectへのビルド・アップロード・タグ付けの全自動化"
-  lane :release do
+  lane :release do |options|
+    # コマンド実行時に version:X.X.X が渡された場合のみバージョンを変更
+    if options[:version]
+      increment_version_number(
+        version_number: options[:version],
+        xcodeproj: "SakuttoSplit.xcodeproj"
+      )
+    end
+
     # 1. Xcodeプロジェクトのビルド番号を1繰り上げる
     increment_build_number(
       xcodeproj: "SakuttoSplit.xcodeproj"
@@ -29,7 +37,7 @@ platform :ios do
       export_method: "app-store"
     )
 
-    # 3. App Store ConnectへIPAファイルをアップロード（メタデータ送信はスキップ）
+    # 3. App Store ConnectへIPAファイルをアップロード
     upload_to_app_store(
       skip_metadata: true,
       skip_screenshots: true,
