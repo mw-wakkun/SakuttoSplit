@@ -44,6 +44,16 @@ struct SakuttoSplitView: View {
                 }
             }
         }
+        // MARK: 広告バナー表示
+#if DEBUG
+        // テスト用広告ID
+        AdBannerView(adUnitID: "ca-app-pub-3940256099942544/2934735716")
+            .frame(height: 50)
+#else
+        // 本番用広告ID
+        AdBannerView(adUnitID: "ca-app-pub-9676260030977388/3738962239")
+            .frame(height: 50)
+#endif
     }
 }
 

@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import GoogleMobileAds
 
 @main
 struct SakuttoSplitApp: App {
     var body: some Scene {
         WindowGroup {
             SakuttoSplitRouter.assembleModule()
+                .task {
+                    await MobileAds.shared.start()
+                }
         }
     }
 }

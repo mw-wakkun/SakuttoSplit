@@ -15,6 +15,8 @@
 		7F14AF9B2FA5EDBA00FEBF1E /* SakuttoSplitInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */; };
 		7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */; };
 		7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */; };
+		7F585B583029FC650011A6CB /* AdBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F585B573029FC650011A6CB /* AdBannerView.swift */; };
+		7FCB1D3330271BE900F74351 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 7FCB1D3230271BE900F74351 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +39,8 @@
 		7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitPresenter.swift; sourceTree = "<group>"; };
 		7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitRouter.swift; sourceTree = "<group>"; };
 		7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SakuttoSplitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F585B573029FC650011A6CB /* AdBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBannerView.swift; sourceTree = "<group>"; };
+		7FCB1D04302718BE00F74351 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SakuttoSplit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -60,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7FCB1D3330271BE900F74351 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,13 +149,30 @@
 		7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */ = {
 			isa = PBXGroup;
 			children = (
+				7FCB1D04302718BE00F74351 /* Info.plist */,
 				7F14AF8D2FA5E85800FEBF1E /* App */,
 				7F14AF902FA5EAEB00FEBF1E /* Modules */,
 				7F14AF8F2FA5EAE000FEBF1E /* Extensions */,
 				7F14AF8E2FA5EACE00FEBF1E /* Entity */,
+				7F585B563029FC3C0011A6CB /* Components */,
 				7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */,
 			);
 			path = SakuttoSplit;
+			sourceTree = "<group>";
+		};
+		7F585B563029FC3C0011A6CB /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				7F585B573029FC650011A6CB /* AdBannerView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		7FCB1D3130271BE900F74351 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		7FDD97C32FA58CB10063A443 = {
@@ -158,6 +180,7 @@
 			children = (
 				7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */,
 				7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */,
+				7FCB1D3130271BE900F74351 /* Frameworks */,
 				7FDD97CD2FA58CB10063A443 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -211,6 +234,7 @@
 			);
 			name = SakuttoSplit;
 			packageProductDependencies = (
+				7FCB1D3230271BE900F74351 /* GoogleMobileAds */,
 			);
 			productName = LetsSplitTheBill;
 			productReference = 7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */;
@@ -244,6 +268,9 @@
 			);
 			mainGroup = 7FDD97C32FA58CB10063A443;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7FCB1D3030271BD100F74351 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7FDD97CD2FA58CB10063A443 /* Products */;
 			projectDirPath = "";
@@ -288,6 +315,7 @@
 				7F14AF8A2FA5DF4D00FEBF1E /* SakuttoSplitView.swift in Sources */,
 				7F14AF982FA5ED1B00FEBF1E /* AttendeeGroup.swift in Sources */,
 				7F14AF992FA5ED3400FEBF1E /* View+Extension.swift in Sources */,
+				7F585B583029FC650011A6CB /* AdBannerView.swift in Sources */,
 				7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */,
 				7F14AF8B2FA5DF4D00FEBF1E /* SakuttoSplitApp.swift in Sources */,
 				7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */,
@@ -478,6 +506,7 @@
 				DEVELOPMENT_TEAM = H6KKP4L92Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SakuttoSplit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "サクッと割り勘";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -514,6 +543,7 @@
 				DEVELOPMENT_TEAM = H6KKP4L92Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SakuttoSplit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "サクッと割り勘";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -570,6 +600,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7FCB1D3030271BD100F74351 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7FCB1D3230271BE900F74351 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7FCB1D3030271BD100F74351 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7FDD97C42FA58CB10063A443 /* Project object */;
 }
