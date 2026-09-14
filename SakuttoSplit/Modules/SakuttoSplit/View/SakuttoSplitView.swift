@@ -62,6 +62,10 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             difference: presenter.viewState.difference,
                             shareText: presenter.viewState.shareText,
                             validationIssue: presenter.viewState.validationIssue,
+                            collectionSeats: presenter.collectionState.seats,
+                            unpaidShareText: presenter.unpaidShareText,
+                            isUnpaidShareEnabled: presenter.isUnpaidShareEnabled,
+                            onToggleCollectionSeat: { presenter.didTapToggleCollectionSeat(id: $0) },
                             onSettleComplete: settleComplete
                         )
                     }

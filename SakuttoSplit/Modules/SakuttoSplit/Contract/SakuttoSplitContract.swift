@@ -17,6 +17,8 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var collectionState: CollectionState { get }
     /// 未払い席だけの再シェア文。席が無い・全員済は空文字
     var unpaidShareText: String { get }
+    /// 未払いが 1 席以上かつメインシェアが有効なときだけ true
+    var isUnpaidShareEnabled: Bool { get }
     /// 起動直後・精算直後の initial ではなく、前回と入力が違うときだけ確認する
     var needsRestoreConfirmation: Bool { get }
     func didChangeTotalAmount(_ text: String)

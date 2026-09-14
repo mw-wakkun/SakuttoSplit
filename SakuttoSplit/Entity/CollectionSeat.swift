@@ -39,9 +39,19 @@ struct CollectionSeatID: Hashable, Equatable, RawRepresentable {
 /// 回収ボードの 1 行。金額はグループの 1 人あたり
 struct CollectionSeat: Equatable, Identifiable {
     var id: CollectionSeatID
-    var label: String
+    var groupName: String
+    /// 展開時は 1 始まり。グループ 1 行のときは nil
+    var displayNumber: Int?
     var amountPerPerson: Int
     var isPaid: Bool
+
+    /// シェア文とテスト用。展開は `名前 番号`、非展開はグループ名
+    var label: String {
+        if let displayNumber {
+            return "\(groupName) \(displayNumber)"
+        }
+        return groupName
+    }
 
     /// 人数が上限以下なら席を展開する。超えたらグループ 1 行。済は席 ID で引き継ぐ
     static func make(
@@ -58,7 +68,8 @@ struct CollectionSeat: Equatable, Identifiable {
             let id = CollectionSeatID(groupID: groupID, index: index)
             return CollectionSeat(
                 id: id,
-                label: shouldExpand ? "\(name) \(index + 1)" : name,
+                groupName: name,
+                displayNumber: shouldExpand ? index + 1 : nil,
                 amountPerPerson: amountPerPerson,
                 isPaid: paidSeatKeys.contains(id.rawValue)
             )

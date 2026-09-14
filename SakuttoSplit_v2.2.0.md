@@ -494,3 +494,4 @@ ShareTextBuilder.build(
 
 - **フェーズ 0（完了）**: `CollectionSeat` / 席 ID / `InputLimits.collectionExpandMaxCount`、`BillSnapshot` schema 2 + v1 デコード（`paidSeatKeys == []`）、Store が schema 1...2 を受理、`ShareTextBuilder.buildUnpaid`。画面・Presenter の席状態は未着手。
 - **フェーズ 1（完了）**: Presenter に `collectionState` / `didTapToggleCollectionSeat` / 未払いシェア文。妥当な入力で席を生成。トグルは計算 0 回でメイン `shareText` 不変。人数増減で末尾の席が変化し済は維持。精算・background で `paidSeatKeys` を保存し、復元で戻す。セット適用で済をクリア。UI は未着手。
+- **フェーズ 2（完了）**: `CollectionSection` を結果セクションの緑シェアと精算完了の間に挿入。妥当なときだけ表示。未払い `ShareLink` は `.bordered`（緑にしない）。xcstrings と Preview（少人数 / 全員済 / 非表示）を追加。バナー規則は未変更。

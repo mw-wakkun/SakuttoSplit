@@ -26,6 +26,10 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         )
     }
 
+    var isUnpaidShareEnabled: Bool {
+        viewState.isShareEnabled && !collectionState.unpaidSeats.isEmpty
+    }
+
     var needsRestoreConfirmation: Bool {
         guard let lastBill = sessionStore.lastBill else { return false }
         if Self.matchesInitialInput(viewState) { return false }

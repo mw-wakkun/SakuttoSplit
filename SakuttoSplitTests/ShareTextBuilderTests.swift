@@ -30,13 +30,15 @@ final class ShareTextBuilderTests: XCTestCase {
         let seats = [
             CollectionSeat(
                 id: CollectionSeatID(groupID: groupID, index: 1),
-                label: "一般 2",
+                groupName: "一般",
+                displayNumber: 2,
                 amountPerPerson: 6200,
                 isPaid: false
             ),
             CollectionSeat(
                 id: CollectionSeatID(groupID: groupID, index: 3),
-                label: "一般 4",
+                groupName: "一般",
+                displayNumber: 4,
                 amountPerPerson: 6200,
                 isPaid: false
             )

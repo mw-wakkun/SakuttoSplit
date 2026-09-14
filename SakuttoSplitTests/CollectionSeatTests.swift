@@ -39,6 +39,8 @@ final class CollectionSeatTests: XCTestCase {
         XCTAssertEqual(seats.count, 1)
         XCTAssertEqual(seats[0].id.rawValue, "\(groupID.uuidString):0")
         XCTAssertEqual(seats[0].label, "部長 1")
+        XCTAssertEqual(seats[0].groupName, "部長")
+        XCTAssertEqual(seats[0].displayNumber, 1)
         XCTAssertEqual(seats[0].amountPerPerson, 10000)
         XCTAssertFalse(seats[0].isPaid)
     }
@@ -55,6 +57,7 @@ final class CollectionSeatTests: XCTestCase {
 
         XCTAssertEqual(seats.count, 4)
         XCTAssertEqual(seats.map(\.label), ["一般 1", "一般 2", "一般 3", "一般 4"])
+        XCTAssertEqual(seats.map(\.displayNumber), [1, 2, 3, 4])
         XCTAssertEqual(seats.map(\.id.index), [0, 1, 2, 3])
         XCTAssertEqual(seats.map(\.id.rawValue), (0...3).map { "\(groupID.uuidString):\($0)" })
         XCTAssertTrue(seats.allSatisfy { $0.amountPerPerson == 6200 })
@@ -90,6 +93,8 @@ final class CollectionSeatTests: XCTestCase {
 
         XCTAssertEqual(seats.count, 1)
         XCTAssertEqual(seats[0].label, "一般")
+        XCTAssertEqual(seats[0].groupName, "一般")
+        XCTAssertNil(seats[0].displayNumber)
         XCTAssertEqual(seats[0].id.index, 0)
         XCTAssertEqual(seats[0].id.rawValue, "\(groupID.uuidString):0")
         XCTAssertEqual(seats[0].amountPerPerson, 1000)

@@ -59,6 +59,50 @@
         }
       }
     },
+    "collection.all_paid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全員回収済み"
+          }
+        }
+      }
+    },
+    "collection.progress %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未払い %lld / %lld"
+          }
+        }
+      }
+    },
+    "collection.seat_label %@ %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %lld"
+          }
+        }
+      }
+    },
+    "collection.share_unpaid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未払いだけ再シェア"
+          }
+        }
+      }
+    },
     "difference.amount %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -220,6 +264,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "お会計設定"
+          }
+        }
+      }
+    },
+    "section.collection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回収"
           }
         }
       }

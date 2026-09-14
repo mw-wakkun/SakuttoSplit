@@ -13,6 +13,10 @@ struct CalculationResultSection: View {
     let difference: Int
     let shareText: String
     let validationIssue: SakuttoSplitValidationIssue?
+    var collectionSeats: [CollectionSeat] = []
+    var unpaidShareText: String = ""
+    var isUnpaidShareEnabled: Bool = false
+    var onToggleCollectionSeat: (CollectionSeatID) -> Void = { _ in }
     var onSettleComplete: () -> Void
 
     var body: some View {
@@ -32,6 +36,15 @@ struct CalculationResultSection: View {
 
         // ShareLink + listRowBackground は EquatableView に包むと行背景が落ち、白文字が見えなくなる
         ShareResultButton(shareText: shareText, isEnabled: validationIssue == nil)
+
+        if !collectionSeats.isEmpty {
+            CollectionSection(
+                seats: collectionSeats,
+                unpaidShareText: unpaidShareText,
+                isUnpaidShareEnabled: isUnpaidShareEnabled,
+                onToggle: onToggleCollectionSeat
+            )
+        }
 
         SettleCompleteButton(validationIssue: validationIssue, action: onSettleComplete)
     }
@@ -76,6 +89,20 @@ private extension SakuttoSplitValidationIssue {
             difference: -200,
             shareText: "🍻 本日のお会計 🍻",
             validationIssue: nil,
+            collectionSeats: {
+                let groupID = UUID()
+                return (0..<4).map { index in
+                    CollectionSeat(
+                        id: CollectionSeatID(groupID: groupID, index: index),
+                        groupName: "一般",
+                        displayNumber: index + 1,
+                        amountPerPerson: 6200,
+                        isPaid: index == 1
+                    )
+                }
+            }(),
+            unpaidShareText: "🍻 未払いのお願い 🍻",
+            isUnpaidShareEnabled: true,
             onSettleComplete: {}
         )
     }
@@ -88,6 +115,19 @@ private extension SakuttoSplitValidationIssue {
             difference: 0,
             shareText: "",
             validationIssue: .emptyTotalAmount,
+            onSettleComplete: {}
+        )
+    }
+}
+
+#Preview("hidden") {
+    Form {
+        CalculationResultSection(
+            results: [],
+            difference: 0,
+            shareText: "",
+            validationIssue: .emptyTotalAmount,
+            collectionSeats: [],
             onSettleComplete: {}
         )
     }

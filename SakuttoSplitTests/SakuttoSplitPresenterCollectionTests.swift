@@ -288,6 +288,32 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
             ※PayPay等で送金をお願いします！
             """
         )
+        XCTAssertTrue(presenter.isUnpaidShareEnabled)
+    }
+
+    func testIsUnpaidShareEnabled_WhenAllPaid_IsFalse() {
+        let presenter = makeValidDefaultPresenter().presenter
+        XCTAssertTrue(presenter.isUnpaidShareEnabled)
+
+        for seat in presenter.collectionState.seats {
+            presenter.didTapToggleCollectionSeat(id: seat.id)
+        }
+
+        XCTAssertTrue(presenter.collectionState.unpaidSeats.isEmpty)
+        XCTAssertEqual(presenter.unpaidShareText, "")
+        XCTAssertFalse(presenter.isUnpaidShareEnabled)
+        XCTAssertEqual(
+            presenter.viewState.shareText,
+            Self.expectedShareTextForDefaultGroupsTotal35000
+        )
+    }
+
+    func testIsUnpaidShareEnabled_WhenInvalid_IsFalse() {
+        let presenter = SakuttoSplitPresenter(interactor: CalculatingSpyInteractor())
+
+        XCTAssertTrue(presenter.collectionState.seats.isEmpty)
+        XCTAssertFalse(presenter.isUnpaidShareEnabled)
+        XCTAssertEqual(presenter.unpaidShareText, "")
     }
 
     private func makeValidDefaultPresenter() -> (
