@@ -18,12 +18,13 @@
 View は描画と Intent の転送だけを行い、判断・正規化・計算起動は Presenter、割り勘計算は Interactor、生成物は Entity、組み立ては Router が担います。
 
 - **View**: `SakuttoSplitView` は `SakuttoSplitPresenterProtocol` に対してジェネリック。観察は `@ObservedObject` のみ。サブビューは Presenter 全体を受け取らず、コントロールが要求する Binding アダプタと、リスト行の Intent クロージャを使い分ける。
-- **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面は `viewState.shareText`、入力バリデーションもここ。
+- **Presenter**: `@MainActor`。`viewState`（計算の正本）と `sessionChrome`（復元・セット）を `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面は `viewState.shareText`、入力バリデーションもここ。
 - **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
 - **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
 - **Router**: `SakuttoSplitModule`（Presenter、`AdsController`、banner / interstitial / rewarded の 3 ID）を返す。`AnyView` は使わない。
 - **App**: `assembleModule()` は `init` のみ。Presenter と `AdsController` を `@StateObject` で所有する。SDK `start` 完了後に `startLoadingIfNeeded`。
 - **Ads**: 資格判定は `AdEligibility`、広告オフ期限は `AdFreeStore`（UserDefaults）。`GoogleMobileAds` の import は App / `AdBannerView` / `AdsController` のみ。計算 Presenter は広告 SDK を知らない。
+- **Session**: 前回会計とメンバーセットは `BillSessionStore`（UserDefaults、`session.*`）。Presenter は Store に依存し、SDK は import しない。
 - **Config**: 広告ユニット ID（`AdConfiguration`。DEBUG は Google テスト ID、Release は本番 3 ID）と入力上限（`InputLimits`）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
 
 プロトコルは `SakuttoSplitContract.swift` に集約し、Presenter / Interactor はプロトコル経由で差し替えできるようにしています。
@@ -32,18 +33,25 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 `SakuttoSplitTests` で Interactor / Presenter / Router / Entity 変換 / 入力正規化を `XCTest` しています。テストファイル名とクラス名は対応させています。
 
 - Interactor: 均等割り、固定額と割合の混合、端数単位、空入力、固定額超過、同名グループなど
-- Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否
+- Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否、精算時の前回保存、復元、メンバーセット
 - 計算結果の identity はグループ名ではなく `groupID`
-- 広告: 資格判定・精算リセット・広告オフ期限。SDK 本体は叩かない
+- 広告: 資格判定・精算リセット・広告オフ期限。リワード目的（24h オフ / 保存枠）は分離。SDK 本体は叩かない
+- 永続化: 壊れた JSON は空扱い。Store は `UserDefaults(suiteName:)` でテストする
 
 ## 広告
 割り勘の「サクッと」を維持するため、広告は入力の邪魔にならない位置と、ユーザーが自分で区切った直後にだけ出す。
 
 - **バナー**: 画面最下部、Form の外。キーボード表示中（いずれかの入力がフォーカス中）は高さ 0 で畳み、確認中だけ出す。広告オフ中も畳む。SDK 未 ready かつキーボードなしのときは高さ 50 のプレースホルダ。入力のたびに再 load しない。
 - **インタースティシャル**: 「精算完了（次の会計へ）」が成功した直後だけ。起動・シェア・入力・バックグラウンド復帰では出さない。起動から 15 秒未満、未 load、このプロセスで既に 1 回出した、広告オフ中は出さず、リセットだけ行う。待ちダイアログは出さない。
-- **リワード**: 右上のボタンを押したときだけ動画を再生する。最後まで見ると 24 時間、バナーとインタースティシャルの両方を止める。途中閉じでは付与しない。未 load なら「広告を読み込めませんでした」と短く伝え、落とさない。
+- **リワード**: 右上は「今日の広告をオフ」。最後まで見ると 24 時間、バナーとインタースティシャルの両方を止める。途中閉じでは付与しない。未 load なら「広告を読み込めませんでした」と短く伝え、落とさない。編成の保存枠を増やす動画は別入口で、広告オフは付かない。
 - **出さないもの**: App Open、起動時全画面、シェア前後の全画面、ATT ダイアログ（v2.0.0 は非パーソナライズ）。
 - **ID**: DEBUG は Google 公式テスト ID。Release は AdMob 本番 3 ID（バナー / インタースティシャル / リワード）。`GADApplicationIdentifier` は変えない。
+
+## 会計の継続
+今夜の会計が消えないことと、よく使う編成を次も一発で出せることを、広告の隣に置く。
+
+- **前回の会計を復元（無料）**: 精算完了の直前と、バックグラウンド遷移時に、妥当な入力だけ 1 件保存する。起動はいつも初期画面。左上から任意で戻せる。総額空の初期状態では、既存の前回を消さない。
+- **メンバーセット**: グループ編成と端数単位を名前付きで保存する。総額は含めない。無料 1 件。動画を最後まで見ると枠が 1 つ増え、最大 3。適用しても今の総額は変わらない。広告オフ用の動画とは報酬が混ざらない。
 
 ## スクリーンショット
 | 入力画面 | 計算結果とシェア |

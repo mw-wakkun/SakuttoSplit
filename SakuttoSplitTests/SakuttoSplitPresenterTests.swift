@@ -695,6 +695,29 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertNotEqual(presenter.viewState.groups[0].id, groupID)
     }
 
+    func testInit_BrokenSessionData_StartsAtInitialWithoutCrashing() throws {
+        let suiteName = "test.sakuttosplit.broken.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults.set(Data("not-json".utf8), forKey: BillSessionStore.lastBillKey)
+        defaults.set(Data("also-broken".utf8), forKey: BillSessionStore.memberSetsKey)
+        defaults.set(99, forKey: BillSessionStore.slotCountKey)
+        let store = BillSessionStore(defaults: defaults)
+        let spy = CalculatingSpyInteractor()
+
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
+        XCTAssertEqual(presenter.viewState.groups.count, 2)
+        XCTAssertEqual(presenter.viewState.groups[0].name, "部長")
+        XCTAssertEqual(presenter.viewState.roundingUnit, .hundred)
+        XCTAssertFalse(presenter.sessionChrome.hasLastBill)
+        XCTAssertTrue(presenter.sessionChrome.memberSets.isEmpty)
+        XCTAssertEqual(presenter.sessionChrome.slotCount, 3)
+        XCTAssertEqual(spy.calculateCallCount, 1)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     func testMemberSetSheet_OpenAndClose_DoesNotRecalculate() {
         let spy = CalculatingSpyInteractor()
         let store = InMemoryBillSessionStore()
