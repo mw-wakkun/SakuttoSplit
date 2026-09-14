@@ -27,6 +27,13 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapSettleComplete()
     func didEnterBackground()
     func didTapRestoreLastBill()
+    /// 現在グループが initial の既定 2 件と違うとき、適用前に確認する
+    var needsMemberSetApplyConfirmation: Bool { get }
+    func didTapSaveMemberSet(name: String)
+    func didTapOpenMemberSetSheet()
+    func didTapCloseMemberSetSheet()
+    func didTapApplyMemberSet(id: UUID)
+    func didTapDeleteMemberSet(id: UUID)
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする

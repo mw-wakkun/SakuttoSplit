@@ -24,6 +24,11 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         return makeSnapshot() != lastBill
     }
 
+    var needsMemberSetApplyConfirmation: Bool {
+        viewState.groups.map(Self.inputFingerprint)
+            != SakuttoSplitViewState.initial.groups.map(Self.inputFingerprint)
+    }
+
     convenience init(interactor: SakuttoSplitInteractorProtocol) {
         self.init(
             interactor: interactor,
@@ -49,7 +54,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         var state = initialState
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
-        self.sessionChrome = SakuttoSplitSessionChrome(hasLastBill: sessionStore.lastBill != nil)
+        self.sessionChrome = makeSessionChrome(isMemberSetSheetPresented: false)
     }
 
     func didChangeTotalAmount(_ text: String) {
@@ -132,6 +137,45 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         }
     }
 
+    /// 空き枠があるときだけ編成を保存する。総額は持たない。計算は走らせない
+    func didTapSaveMemberSet(name: String) {
+        guard !viewState.groups.isEmpty else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = trimmed.isEmpty
+            ? String(localized: "set.default_name \(sessionStore.memberSets.count + 1)")
+            : trimmed
+        let memberSet = MemberSet(
+            name: resolvedName,
+            roundingUnit: viewState.roundingUnit,
+            groups: viewState.groups
+        )
+        guard sessionStore.saveMemberSet(memberSet) else { return }
+        refreshSessionChrome()
+    }
+
+    func didTapOpenMemberSetSheet() {
+        setMemberSetSheetPresented(true)
+    }
+
+    func didTapCloseMemberSetSheet() {
+        setMemberSetSheetPresented(false)
+    }
+
+    /// 総額は維持し、端数とグループをセットで置き換える。計算は 1 回
+    func didTapApplyMemberSet(id: UUID) {
+        guard let memberSet = sessionStore.memberSets.first(where: { $0.id == id }) else { return }
+        applyUpdate { state in
+            state.roundingUnit = memberSet.roundingUnit
+            state.groups = memberSet.groups
+        }
+        setMemberSetSheetPresented(false)
+    }
+
+    func didTapDeleteMemberSet(id: UUID) {
+        sessionStore.deleteMemberSet(id: id)
+        refreshSessionChrome()
+    }
+
     private func saveLastBillIfValid() {
         guard viewState.validationIssue == nil else { return }
         sessionStore.saveLastBill(makeSnapshot())
@@ -139,9 +183,23 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     }
 
     private func refreshSessionChrome() {
-        let next = SakuttoSplitSessionChrome(hasLastBill: sessionStore.lastBill != nil)
+        let next = makeSessionChrome(isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented)
         guard next != sessionChrome else { return }
         sessionChrome = next
+    }
+
+    private func setMemberSetSheetPresented(_ presented: Bool) {
+        guard sessionChrome.isMemberSetSheetPresented != presented else { return }
+        sessionChrome.isMemberSetSheetPresented = presented
+    }
+
+    private func makeSessionChrome(isMemberSetSheetPresented: Bool) -> SakuttoSplitSessionChrome {
+        SakuttoSplitSessionChrome(
+            hasLastBill: sessionStore.lastBill != nil,
+            memberSets: sessionStore.memberSets,
+            slotCount: sessionStore.slotCount,
+            isMemberSetSheetPresented: isMemberSetSheetPresented
+        )
     }
 
     private func makeSnapshot() -> BillSnapshot {

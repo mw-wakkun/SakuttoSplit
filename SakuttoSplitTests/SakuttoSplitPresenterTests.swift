@@ -561,6 +561,153 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
     }
 
+    func testDidTapSaveMemberSet_WhenSlotAvailable_PersistsWithoutRecalculating() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeRoundingUnit(.thousand)
+        let groups = presenter.viewState.groups
+        let callsBeforeSave = spy.calculateCallCount
+
+        presenter.didTapSaveMemberSet(name: "いつもの飲み会")
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSave)
+        XCTAssertEqual(store.memberSets.count, 1)
+        XCTAssertEqual(store.memberSets[0].name, "いつもの飲み会")
+        XCTAssertEqual(store.memberSets[0].roundingUnit, .thousand)
+        XCTAssertEqual(store.memberSets[0].groups.map(\.id), groups.map(\.id))
+        XCTAssertEqual(presenter.sessionChrome.memberSets.count, 1)
+        XCTAssertFalse(presenter.sessionChrome.hasEmptyMemberSetSlot)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
+    }
+
+    func testDidTapSaveMemberSet_WhenNameBlank_UsesDefaultName() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        presenter.didTapSaveMemberSet(name: "  ")
+
+        XCTAssertEqual(store.memberSets.map(\.name), ["セット1"])
+    }
+
+    func testDidTapSaveMemberSet_WhenNoGroups_DoesNotWrite() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didTapRemoveGroup(id: presenter.viewState.groups[0].id)
+        presenter.didTapRemoveGroup(id: presenter.viewState.groups[0].id)
+
+        presenter.didTapSaveMemberSet(name: "いつもの")
+
+        XCTAssertTrue(store.memberSets.isEmpty)
+        XCTAssertTrue(presenter.sessionChrome.memberSets.isEmpty)
+    }
+
+    func testDidTapSaveMemberSet_WhenNoEmptySlot_DoesNotWriteSecond() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didTapSaveMemberSet(name: "1件目")
+
+        presenter.didTapSaveMemberSet(name: "2件目")
+
+        XCTAssertEqual(store.memberSets.map(\.name), ["1件目"])
+        XCTAssertEqual(presenter.sessionChrome.memberSets.count, 1)
+    }
+
+    func testDidTapApplyMemberSet_KeepsTotal_ReplacesGroupsAndRounding_CalculatesOnce() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didChangeRoundingUnit(.thousand)
+        let savedGroups = presenter.viewState.groups
+        presenter.didTapSaveMemberSet(name: "いつもの")
+        presenter.didTapAddGroup()
+        presenter.didChangeRoundingUnit(.one)
+        let callsBeforeApply = spy.calculateCallCount
+        let setID = store.memberSets[0].id
+
+        presenter.didTapApplyMemberSet(id: setID)
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeApply + 1)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+        XCTAssertEqual(presenter.viewState.roundingUnit, .thousand)
+        XCTAssertEqual(presenter.viewState.groups.map(\.id), savedGroups.map(\.id))
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), savedGroups.map(\.name))
+        XCTAssertEqual(presenter.viewState.groups.count, 2)
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertTrue(presenter.viewState.isShareEnabled)
+        XCTAssertFalse(presenter.sessionChrome.isMemberSetSheetPresented)
+    }
+
+    func testNeedsMemberSetApplyConfirmation_WhenInitialGroups_IsFalse() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+
+        XCTAssertFalse(presenter.needsMemberSetApplyConfirmation)
+
+        presenter.didTapAddGroup()
+        XCTAssertTrue(presenter.needsMemberSetApplyConfirmation)
+    }
+
+    func testDidTapDeleteMemberSet_RemovesSet_KeepsSlotCount() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didTapSaveMemberSet(name: "いつもの")
+        let setID = store.memberSets[0].id
+
+        presenter.didTapDeleteMemberSet(id: setID)
+
+        XCTAssertTrue(store.memberSets.isEmpty)
+        XCTAssertTrue(presenter.sessionChrome.memberSets.isEmpty)
+        XCTAssertEqual(store.slotCount, 1)
+        XCTAssertEqual(presenter.sessionChrome.slotCount, 1)
+        XCTAssertTrue(presenter.sessionChrome.hasEmptyMemberSetSlot)
+    }
+
+    func testInit_LoadsExistingMemberSets_WithoutApplyingThem() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let groupID = UUID()
+        XCTAssertTrue(
+            store.saveMemberSet(
+                MemberSet(
+                    name: "残す",
+                    roundingUnit: .fiveHundred,
+                    groups: [
+                        AttendeeGroupDraft(id: groupID, name: "部長", countText: "2", mode: .fixed, fixedAmountText: "8000")
+                    ]
+                )
+            )
+        )
+
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        XCTAssertEqual(presenter.sessionChrome.memberSets.map(\.name), ["残す"])
+        XCTAssertEqual(presenter.viewState.groups.count, 2)
+        XCTAssertEqual(presenter.viewState.groups[0].name, "部長")
+        XCTAssertEqual(presenter.viewState.roundingUnit, .hundred)
+        XCTAssertNotEqual(presenter.viewState.groups[0].id, groupID)
+    }
+
+    func testMemberSetSheet_OpenAndClose_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didTapOpenMemberSetSheet()
+        XCTAssertTrue(presenter.sessionChrome.isMemberSetSheetPresented)
+        presenter.didTapCloseMemberSetSheet()
+        XCTAssertFalse(presenter.sessionChrome.isMemberSetSheetPresented)
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+    }
+
     func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeExistingLastBill() {
         let spy = CalculatingSpyInteractor()
         let store = InMemoryBillSessionStore()

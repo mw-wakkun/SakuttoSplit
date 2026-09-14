@@ -279,6 +279,105 @@
         }
       }
     },
+    "set.apply_confirm_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存した編成を適用します。今のグループ入力は消えます。総額はそのままです。"
+          }
+        }
+      }
+    },
+    "set.apply_confirm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今のグループを置き換えます"
+          }
+        }
+      }
+    },
+    "set.default_name %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セット%lld"
+          }
+        }
+      }
+    },
+    "set.delete_confirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この編成を削除しますか？"
+          }
+        }
+      }
+    },
+    "set.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存した編成はまだありません"
+          }
+        }
+      }
+    },
+    "set.load" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存した編成を使う"
+          }
+        }
+      }
+    },
+    "set.name_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セット名（例: いつもの飲み会）"
+          }
+        }
+      }
+    },
+    "set.no_slot" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存できる編成の枠がありません"
+          }
+        }
+      }
+    },
+    "set.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この編成を保存"
+          }
+        }
+      }
+    },
     "settle.complete" : {
       "extractionState" : "manual",
       "localizations" : {

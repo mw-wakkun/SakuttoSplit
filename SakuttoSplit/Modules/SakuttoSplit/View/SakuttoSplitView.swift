@@ -17,6 +17,11 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @FocusState private var focusedField: SakuttoSplitFocus?
     @State private var rootViewControllerBox = RootViewControllerBox()
     @State private var isRestoreConfirmPresented = false
+    @State private var isSaveMemberSetPresented = false
+    @State private var isNoMemberSetSlotPresented = false
+    @State private var isApplyMemberSetConfirmPresented = false
+    @State private var memberSetNameDraft = ""
+    @State private var pendingApplyMemberSetID: UUID?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -40,6 +45,14 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             onAdd: { presenter.didTapAddGroup() },
                             onRemove: { presenter.didTapRemoveGroup(id: $0) }
                         )
+                        Button("set.save") {
+                            saveMemberSetTapped()
+                        }
+                        .disabled(presenter.viewState.groups.isEmpty)
+                        Button("set.load") {
+                            focusedField = nil
+                            presenter.didTapOpenMemberSetSheet()
+                        }
                     }
 
                     Section("section.results") {
@@ -99,6 +112,40 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         } message: {
             Text("session.restore_confirm_message")
         }
+        .alert("set.save", isPresented: $isSaveMemberSetPresented) {
+            TextField("set.name_placeholder", text: $memberSetNameDraft)
+            Button("set.save") {
+                presenter.didTapSaveMemberSet(name: memberSetNameDraft)
+            }
+            Button(role: .cancel) {}
+        }
+        .alert("set.no_slot", isPresented: $isNoMemberSetSlotPresented) {
+            Button(role: .cancel) {}
+        }
+        .alert(
+            "set.apply_confirm_title",
+            isPresented: $isApplyMemberSetConfirmPresented
+        ) {
+            Button("set.load") {
+                if let id = pendingApplyMemberSetID {
+                    presenter.didTapApplyMemberSet(id: id)
+                }
+                pendingApplyMemberSetID = nil
+            }
+            Button(role: .cancel) {
+                pendingApplyMemberSetID = nil
+            }
+        } message: {
+            Text("set.apply_confirm_message")
+        }
+        .sheet(isPresented: memberSetSheetBinding) {
+            MemberSetSheet(
+                memberSets: presenter.sessionChrome.memberSets,
+                onSelect: applyMemberSetTapped,
+                onDelete: { presenter.didTapDeleteMemberSet(id: $0) },
+                onClose: { presenter.didTapCloseMemberSetSheet() }
+            )
+        }
     }
 
     /// リセットしてから広告。Presenter は SDK を知らない
@@ -128,6 +175,44 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         } else {
             presenter.didTapRestoreLastBill()
         }
+    }
+
+    private func saveMemberSetTapped() {
+        focusedField = nil
+        guard !presenter.viewState.groups.isEmpty else { return }
+        if presenter.sessionChrome.hasEmptyMemberSetSlot {
+            memberSetNameDraft = String(
+                localized: "set.default_name \(presenter.sessionChrome.memberSets.count + 1)"
+            )
+            isSaveMemberSetPresented = true
+        } else {
+            isNoMemberSetSlotPresented = true
+        }
+    }
+
+    private func applyMemberSetTapped(id: UUID) {
+        focusedField = nil
+        let needsConfirm = presenter.needsMemberSetApplyConfirmation
+        presenter.didTapCloseMemberSetSheet()
+        if needsConfirm {
+            pendingApplyMemberSetID = id
+            isApplyMemberSetConfirmPresented = true
+        } else {
+            presenter.didTapApplyMemberSet(id: id)
+        }
+    }
+
+    private var memberSetSheetBinding: Binding<Bool> {
+        Binding(
+            get: { presenter.sessionChrome.isMemberSetSheetPresented },
+            set: { presented in
+                if presented {
+                    presenter.didTapOpenMemberSetSheet()
+                } else {
+                    presenter.didTapCloseMemberSetSheet()
+                }
+            }
+        )
     }
 
     private var hideAdsToolbarItem: some View {
