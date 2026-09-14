@@ -10,7 +10,7 @@ import XCTest
 
 final class ShareTextBuilderTests: XCTestCase {
 
-    func testBuild_MainShareText_MatchesExistingJapaneseCopy() {
+    func testBuild_MainShareText_ShortageUsesReceiptCopy() {
         let managerID = UUID()
         let staffID = UUID()
         let text = ShareTextBuilder.build(
@@ -23,6 +23,37 @@ final class ShareTextBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(text, Self.expectedMainShareTextForDefaultGroupsTotal35000)
+        XCTAssertFalse(text.contains("🍻"))
+        XCTAssertFalse(text.contains("※"))
+        XCTAssertFalse(text.contains("！"))
+    }
+
+    func testBuild_MainShareText_SurplusUsesSurplusLabel() {
+        let managerID = UUID()
+        let staffID = UUID()
+        let text = ShareTextBuilder.build(
+            totalAmountText: "35000",
+            results: [
+                GroupCalculationResult(groupID: managerID, name: "部長", amountPerPerson: 10000, total: 10000),
+                GroupCalculationResult(groupID: staffID, name: "一般", amountPerPerson: 6200, total: 24800)
+            ],
+            difference: 200
+        )
+
+        XCTAssertEqual(
+            text,
+            """
+            本日のお会計
+            総額  35,000円
+            ----------------
+            部長  1人 10,000円
+            一般  1人 6,200円
+            ----------------
+            余剰  200円
+            PayPay等で送金をお願いします
+            """
+        )
+        XCTAssertFalse(text.contains("不足"))
     }
 
     func testBuildUnpaid_IncludesOnlyGivenUnpaidSeats() {
@@ -49,15 +80,16 @@ final class ShareTextBuilderTests: XCTestCase {
         XCTAssertEqual(
             text,
             """
-            🍻 未払いのお願い 🍻
-            総額: 35000 円
+            未払いのお願い
+            総額  35,000円
             ----------------
-            一般 2: 1人 6200円
-            一般 4: 1人 6200円
+            一般 2  1人 6,200円
+            一般 4  1人 6,200円
             ----------------
-            ※PayPay等で送金をお願いします！
+            PayPay等で送金をお願いします
             """
         )
+        XCTAssertFalse(text.contains("🍻"))
     }
 
     func testBuildUnpaid_WhenEmpty_ReturnsEmptyString() {
@@ -67,14 +99,14 @@ final class ShareTextBuilderTests: XCTestCase {
         )
     }
 
-    private static let expectedMainShareTextForDefaultGroupsTotal35000 = """
-    🍻 本日のお会計 🍻
-    総額: 35000 円
+    static let expectedMainShareTextForDefaultGroupsTotal35000 = """
+    本日のお会計
+    総額  35,000円
     ----------------
-    部長: 1人 10000円
-    一般: 1人 6200円
+    部長  1人 10,000円
+    一般  1人 6,200円
     ----------------
-    ⚠️ 不足金: 200円
-    ※PayPay等で送金をお願いします！
+    不足  200円
+    PayPay等で送金をお願いします
     """
 }

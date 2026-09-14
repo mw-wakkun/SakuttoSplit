@@ -36,10 +36,8 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         return makeSnapshot() != lastBill
     }
 
-    var needsMemberSetApplyConfirmation: Bool {
-        viewState.groups.map(Self.inputFingerprint)
-            != SakuttoSplitViewState.initial.groups.map(Self.inputFingerprint)
-    }
+    /// 編成適用前の groups + roundingUnit。通常の applyUpdate で捨てる
+    private var memberSetUndo: MemberSetUndo?
 
     convenience init(interactor: SakuttoSplitInteractorProtocol) {
         self.init(
@@ -159,6 +157,18 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         collectionState = next
     }
 
+    /// そのグループの席をすべて済にする。計算しない。すでに全員済なら何もしない
+    func didTapMarkGroupCollectionPaid(groupID: UUID) {
+        var next = collectionState
+        let indices = next.seats.indices.filter { next.seats[$0].id.groupID == groupID }
+        guard !indices.isEmpty else { return }
+        guard indices.contains(where: { !next.seats[$0].isPaid }) else { return }
+        for index in indices {
+            next.seats[index].isPaid = true
+        }
+        collectionState = next
+    }
+
     /// 空き枠があるときだけ編成を保存する。総額は持たない。計算は走らせない
     func didTapSaveMemberSet(name: String) {
         guard !viewState.groups.isEmpty else { return }
@@ -186,12 +196,24 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     /// 総額は維持し、端数とグループをセットで置き換える。席は作り直し（すべて未払い）
     func didTapApplyMemberSet(id: UUID) {
         guard let memberSet = sessionStore.memberSets.first(where: { $0.id == id }) else { return }
+        let undo = MemberSetUndo(groups: viewState.groups, roundingUnit: viewState.roundingUnit)
         applyUpdate { state in
             state.roundingUnit = memberSet.roundingUnit
             state.groups = memberSet.groups
         }
         reconcileCollection(paidSeatKeys: [])
         setMemberSetSheetPresented(false)
+        memberSetUndo = undo
+    }
+
+    /// 直前の編成適用を取り消す。総額は維持。席は作り直し。Undo が無ければ何もしない
+    func didTapUndoMemberSetApply() {
+        guard let undo = memberSetUndo else { return }
+        applyUpdate { state in
+            state.roundingUnit = undo.roundingUnit
+            state.groups = undo.groups
+        }
+        reconcileCollection(paidSeatKeys: [])
     }
 
     func didTapDeleteMemberSet(id: UUID) {
@@ -225,9 +247,31 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     private func makeSessionChrome(isMemberSetSheetPresented: Bool) -> SakuttoSplitSessionChrome {
         SakuttoSplitSessionChrome(
             hasLastBill: sessionStore.lastBill != nil,
+            lastBillPreview: Self.makeLastBillPreview(from: sessionStore.lastBill),
             memberSets: sessionStore.memberSets,
             slotCount: sessionStore.slotCount,
             isMemberSetSheetPresented: isMemberSetSheetPresented
+        )
+    }
+
+    /// lastBill があるときだけ。席展開は CollectionSeat.make 相当。幽霊キーは unpaid に数えない
+    private static func makeLastBillPreview(from snapshot: BillSnapshot?) -> LastBillPreview? {
+        guard let snapshot else { return nil }
+        let paidKeys = Set(snapshot.paidSeatKeys)
+        let seats = snapshot.groups.flatMap { group in
+            CollectionSeat.make(
+                groupID: group.id,
+                name: group.name,
+                count: group.toDomain().count,
+                amountPerPerson: 0,
+                expandMaxCount: InputLimits.collectionExpandMaxCount,
+                paidSeatKeys: paidKeys
+            )
+        }
+        return LastBillPreview(
+            totalAmountText: snapshot.totalAmountText,
+            unpaidCount: seats.filter { !$0.isPaid }.count,
+            seatCount: seats.count
         )
     }
 
@@ -273,6 +317,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         var next = viewState
         update(&next)
         guard next != viewState else { return }
+        memberSetUndo = nil
         Self.applyCalculation(to: &next, interactor: interactor)
         viewState = next
         reconcileCollection()
@@ -323,4 +368,9 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         }
         return nil
     }
+}
+
+private struct MemberSetUndo: Equatable {
+    var groups: [AttendeeGroupDraft]
+    var roundingUnit: RoundingUnit
 }

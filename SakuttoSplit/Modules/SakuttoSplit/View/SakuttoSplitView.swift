@@ -20,9 +20,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @State private var isSaveMemberSetPresented = false
     @State private var isRewardSlotPresented = false
     @State private var isSlotFullPresented = false
-    @State private var isApplyMemberSetConfirmPresented = false
     @State private var memberSetNameDraft = ""
-    @State private var pendingApplyMemberSetID: UUID?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -143,22 +141,6 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         } message: {
             Text("set.slot_full_message")
         }
-        .alert(
-            "set.apply_confirm_title",
-            isPresented: $isApplyMemberSetConfirmPresented
-        ) {
-            Button("set.load") {
-                if let id = pendingApplyMemberSetID {
-                    presenter.didTapApplyMemberSet(id: id)
-                }
-                pendingApplyMemberSetID = nil
-            }
-            Button(role: .cancel) {
-                pendingApplyMemberSetID = nil
-            }
-        } message: {
-            Text("set.apply_confirm_message")
-        }
         .sheet(isPresented: memberSetSheetBinding) {
             MemberSetSheet(
                 memberSets: presenter.sessionChrome.memberSets,
@@ -241,14 +223,8 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
     private func applyMemberSetTapped(id: UUID) {
         focusedField = nil
-        let needsConfirm = presenter.needsMemberSetApplyConfirmation
         presenter.didTapCloseMemberSetSheet()
-        if needsConfirm {
-            pendingApplyMemberSetID = id
-            isApplyMemberSetConfirmPresented = true
-        } else {
-            presenter.didTapApplyMemberSet(id: id)
-        }
+        presenter.didTapApplyMemberSet(id: id)
     }
 
     private var memberSetSheetBinding: Binding<Bool> {

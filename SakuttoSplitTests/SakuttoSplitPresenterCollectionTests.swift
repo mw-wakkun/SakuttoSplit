@@ -63,6 +63,58 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         ])
     }
 
+    func testDidTapMarkGroupCollectionPaid_MarksOnlyThatGroup_DoesNotRecalculate() {
+        let setup = makeValidDefaultPresenter()
+        let presenter = setup.presenter
+        let spy = setup.spy
+        let staffID = presenter.viewState.groups[1].id
+        let managerID = presenter.viewState.groups[0].id
+        presenter.didTapToggleCollectionSeat(id: CollectionSeatID(groupID: staffID, index: 0))
+        let callsBefore = spy.calculateCallCount
+        let shareBefore = presenter.viewState.shareText
+
+        presenter.didTapMarkGroupCollectionPaid(groupID: staffID)
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState.shareText, shareBefore)
+        XCTAssertEqual(
+            presenter.collectionState.seats.filter { $0.id.groupID == staffID }.map(\.isPaid),
+            [true, true, true, true]
+        )
+        XCTAssertEqual(
+            presenter.collectionState.seats.filter { $0.id.groupID == managerID }.map(\.isPaid),
+            [false]
+        )
+    }
+
+    func testDidTapMarkGroupCollectionPaid_WhenAlreadyAllPaid_IsNoOp() {
+        let setup = makeValidDefaultPresenter()
+        let presenter = setup.presenter
+        let spy = setup.spy
+        let staffID = presenter.viewState.groups[1].id
+        presenter.didTapMarkGroupCollectionPaid(groupID: staffID)
+        let before = presenter.collectionState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapMarkGroupCollectionPaid(groupID: staffID)
+
+        XCTAssertEqual(presenter.collectionState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+    }
+
+    func testDidTapMarkGroupCollectionPaid_UnknownGroup_DoesNotChangeState() {
+        let setup = makeValidDefaultPresenter()
+        let presenter = setup.presenter
+        let spy = setup.spy
+        let before = presenter.collectionState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapMarkGroupCollectionPaid(groupID: UUID())
+
+        XCTAssertEqual(presenter.collectionState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+    }
+
     func testDidTapToggleCollectionSeat_UnknownID_DoesNotChangeState() {
         let setup = makeValidDefaultPresenter()
         let presenter = setup.presenter
@@ -276,7 +328,7 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         XCTAssertNil(staffSeats[0].displayNumber)
         XCTAssertEqual(
             presenter.viewState.shareText.components(separatedBy: "\n")[0],
-            "🍻 本日のお会計 🍻"
+            "本日のお会計"
         )
     }
 
@@ -295,14 +347,14 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         XCTAssertEqual(
             presenter.unpaidShareText,
             """
-            🍻 未払いのお願い 🍻
-            総額: 35000 円
+            未払いのお願い
+            総額  35,000円
             ----------------
-            部長 1: 1人 10000円
-            一般 2: 1人 6200円
-            一般 4: 1人 6200円
+            部長 1  1人 10,000円
+            一般 2  1人 6,200円
+            一般 4  1人 6,200円
             ----------------
-            ※PayPay等で送金をお願いします！
+            PayPay等で送金をお願いします
             """
         )
         XCTAssertTrue(presenter.isUnpaidShareEnabled)
@@ -346,13 +398,13 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
     }
 
     private static let expectedShareTextForDefaultGroupsTotal35000 = """
-    🍻 本日のお会計 🍻
-    総額: 35000 円
+    本日のお会計
+    総額  35,000円
     ----------------
-    部長: 1人 10000円
-    一般: 1人 6200円
+    部長  1人 10,000円
+    一般  1人 6,200円
     ----------------
-    ⚠️ 不足金: 200円
-    ※PayPay等で送金をお願いします！
+    不足  200円
+    PayPay等で送金をお願いします
     """
 }

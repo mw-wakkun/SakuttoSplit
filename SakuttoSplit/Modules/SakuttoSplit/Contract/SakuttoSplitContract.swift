@@ -35,12 +35,14 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapRestoreLastBill()
     /// その席の済/未済だけ反転する。計算しない
     func didTapToggleCollectionSeat(id: CollectionSeatID)
-    /// 現在グループが initial の既定 2 件と違うとき、適用前に確認する
-    var needsMemberSetApplyConfirmation: Bool { get }
+    /// そのグループの席をすべて済にする。計算しない。すでに全員済なら何もしない
+    func didTapMarkGroupCollectionPaid(groupID: UUID)
     func didTapSaveMemberSet(name: String)
     func didTapOpenMemberSetSheet()
     func didTapCloseMemberSetSheet()
     func didTapApplyMemberSet(id: UUID)
+    /// 直前の編成適用を取り消す。総額は維持。席は作り直し
+    func didTapUndoMemberSetApply()
     func didTapDeleteMemberSet(id: UUID)
     func didUnlockMemberSetSlot()
 }

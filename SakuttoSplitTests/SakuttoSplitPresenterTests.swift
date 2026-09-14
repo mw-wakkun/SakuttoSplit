@@ -186,6 +186,7 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.shareText, expected)
         XCTAssertNil(presenter.viewState.validationIssue)
         XCTAssertTrue(presenter.viewState.isShareEnabled)
+        XCTAssertFalse(expected.contains("🍻"))
     }
 
     /// シェア文は ViewState の正本。総額変更と同じ代入で更新され、計算は増えない
@@ -479,6 +480,9 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertTrue(presenter.sessionChrome.hasLastBill)
         XCTAssertFalse(presenter.needsRestoreConfirmation)
         XCTAssertEqual(store.lastBill?.groups.map(\.id), [groupID])
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.totalAmountText, "35000")
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.seatCount, 1)
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.unpaidCount, 1)
     }
 
     func testDidTapRestoreLastBill_RestoresInputCalculatesOnce_AndEnablesShare() {
@@ -559,6 +563,58 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         XCTAssertTrue(presenter.sessionChrome.hasLastBill)
         XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
+    }
+
+    func testLastBillPreview_WhenNoLastBill_IsNil() {
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(
+            interactor: CalculatingSpyInteractor(),
+            sessionStore: store
+        )
+
+        XCTAssertFalse(presenter.sessionChrome.hasLastBill)
+        XCTAssertNil(presenter.sessionChrome.lastBillPreview)
+    }
+
+    func testLastBillPreview_DefaultGroupsWithTwoPaidSeats_UnpaidThreeOfFive() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let managerID = UUID()
+        let staffID = UUID()
+        let paidKeys = [
+            CollectionSeatID(groupID: managerID, index: 0).rawValue,
+            CollectionSeatID(groupID: staffID, index: 1).rawValue
+        ]
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "35000",
+                roundingUnit: .hundred,
+                groups: [
+                    AttendeeGroupDraft(
+                        id: managerID,
+                        name: "部長",
+                        countText: "1",
+                        mode: .fixed,
+                        fixedAmountText: "10000"
+                    ),
+                    AttendeeGroupDraft(
+                        id: staffID,
+                        name: "一般",
+                        countText: "4",
+                        mode: .ratio,
+                        ratioText: "1.0"
+                    )
+                ],
+                paidSeatKeys: paidKeys + [CollectionSeatID(groupID: UUID(), index: 99).rawValue]
+            )
+        )
+
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.totalAmountText, "35000")
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.seatCount, 5)
+        XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.unpaidCount, 3)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
     }
 
     func testDidTapSaveMemberSet_WhenSlotAvailable_PersistsWithoutRecalculating() {
@@ -642,16 +698,74 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertFalse(presenter.sessionChrome.isMemberSetSheetPresented)
     }
 
-    func testNeedsMemberSetApplyConfirmation_WhenInitialGroups_IsFalse() {
+    func testDidTapApplyMemberSet_KeepsUndo_RestoresGroupsAndRoundingWithoutChangingTotal() {
         let spy = CalculatingSpyInteractor()
         let store = InMemoryBillSessionStore()
         let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
         presenter.didChangeTotalAmount("35000")
-
-        XCTAssertFalse(presenter.needsMemberSetApplyConfirmation)
-
+        presenter.didChangeRoundingUnit(.thousand)
+        let groupsBeforeApply = presenter.viewState.groups
+        presenter.didTapSaveMemberSet(name: "いつもの")
         presenter.didTapAddGroup()
-        XCTAssertTrue(presenter.needsMemberSetApplyConfirmation)
+        presenter.didChangeRoundingUnit(.one)
+        let groupsAfterEdit = presenter.viewState.groups
+        let callsBeforeApply = spy.calculateCallCount
+        let setID = store.memberSets[0].id
+
+        presenter.didTapApplyMemberSet(id: setID)
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeApply + 1)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+        XCTAssertEqual(presenter.viewState.roundingUnit, .thousand)
+        XCTAssertEqual(presenter.viewState.groups.map(\.id), groupsBeforeApply.map(\.id))
+        XCTAssertEqual(presenter.viewState.groups.count, 2)
+
+        let callsBeforeUndo = spy.calculateCallCount
+        presenter.didTapUndoMemberSetApply()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeUndo + 1)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+        XCTAssertEqual(presenter.viewState.roundingUnit, .one)
+        XCTAssertEqual(presenter.viewState.groups.map(\.id), groupsAfterEdit.map(\.id))
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), groupsAfterEdit.map(\.name))
+        XCTAssertEqual(presenter.viewState.groups.count, 3)
+    }
+
+    func testDidTapApplyMemberSet_ThenChangeTotal_DiscardsUndo() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSaveMemberSet(name: "いつもの")
+        presenter.didTapAddGroup()
+        let groupsAfterEdit = presenter.viewState.groups
+        presenter.didTapApplyMemberSet(id: store.memberSets[0].id)
+        XCTAssertEqual(presenter.viewState.groups.count, 2)
+
+        presenter.didChangeTotalAmount("40000")
+        let callsAfterTotalChange = spy.calculateCallCount
+        let groupsAfterApply = presenter.viewState.groups
+
+        presenter.didTapUndoMemberSetApply()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterTotalChange)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "40000")
+        XCTAssertEqual(presenter.viewState.groups.map(\.id), groupsAfterApply.map(\.id))
+        XCTAssertNotEqual(presenter.viewState.groups.map(\.id), groupsAfterEdit.map(\.id))
+    }
+
+    func testDidTapUndoMemberSetApply_WhenNoUndo_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        let before = presenter.viewState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapUndoMemberSetApply()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState, before)
     }
 
     func testDidTapDeleteMemberSet_RemovesSet_KeepsSlotCount() {
@@ -824,14 +938,14 @@ final class SakuttoSplitPresenterTests: XCTestCase {
     }
 
     private static let expectedShareTextForDefaultGroupsTotal35000 = """
-    🍻 本日のお会計 🍻
-    総額: 35000 円
+    本日のお会計
+    総額  35,000円
     ----------------
-    部長: 1人 10000円
-    一般: 1人 6200円
+    部長  1人 10,000円
+    一般  1人 6,200円
     ----------------
-    ⚠️ 不足金: 200円
-    ※PayPay等で送金をお願いします！
+    不足  200円
+    PayPay等で送金をお願いします
     """
 }
 
