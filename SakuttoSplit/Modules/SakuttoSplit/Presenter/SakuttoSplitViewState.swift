@@ -8,7 +8,7 @@
 import Foundation
 
 /// シェアを無効化する入力エラー。計算結果の出し方は変えない
-enum SplitValidationIssue: Equatable {
+enum SakuttoSplitValidationIssue: Equatable {
     /// 総額が未入力
     case emptyTotalAmount
     /// 参加者グループが 0 件
@@ -25,7 +25,7 @@ struct SakuttoSplitViewState: Equatable {
     var results: [GroupCalculationResult]
     var difference: Int
     var shareText: String = ""
-    var validationIssue: SplitValidationIssue?
+    var validationIssue: SakuttoSplitValidationIssue?
 
     var isShareEnabled: Bool { validationIssue == nil }
 

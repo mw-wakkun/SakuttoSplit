@@ -12,7 +12,7 @@ struct CalculationResultSection: View {
     let results: [GroupCalculationResult]
     let difference: Int
     let shareText: String
-    let validationIssue: SplitValidationIssue?
+    let validationIssue: SakuttoSplitValidationIssue?
 
     var body: some View {
         ForEach(results) { result in
@@ -50,7 +50,7 @@ struct ResultRow: View, Equatable {
     }
 }
 
-private extension SplitValidationIssue {
+private extension SakuttoSplitValidationIssue {
     var messageKey: LocalizedStringKey {
         switch self {
         case .emptyTotalAmount:

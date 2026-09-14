@@ -17,12 +17,13 @@
 ## アーキテクチャ
 View は描画と Intent の転送だけを行い、判断・正規化・計算起動は Presenter、割り勘計算は Interactor、生成物は Entity、組み立ては Router が担います。
 
-- **View**: `SakuttoSplitView` は `SakuttoSplitPresenterProtocol` に対してジェネリック。サブビューは Presenter 全体を受け取らず、コントロールが要求する Binding アダプタと、リスト行の Intent クロージャを使い分ける。
-- **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面と入力バリデーションもここ。
+- **View**: `SakuttoSplitView` は `SakuttoSplitPresenterProtocol` に対してジェネリック。観察は `@ObservedObject` のみ。サブビューは Presenter 全体を受け取らず、コントロールが要求する Binding アダプタと、リスト行の Intent クロージャを使い分ける。
+- **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面は `viewState.shareText`、入力バリデーションもここ。
 - **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
 - **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
-- **Router**: 具象 `SakuttoSplitView` を組み立てる。`AnyView` は使わない。`SakuttoSplitApp` がモジュールを `@State` で安定所有する。
-- **Config**: 広告ユニット ID（`AdConfiguration`）と入力上限（`InputLimits`）。
+- **Router**: `SakuttoSplitModule`（Presenter と bannerAdUnitID）を返す。`AnyView` は使わない。
+- **App**: `assembleModule()` は `init` のみ。Presenter を `@StateObject` で所有する。
+- **Config**: 広告ユニット ID（`AdConfiguration`）と入力上限（`InputLimits`）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
 
 プロトコルは `SakuttoSplitContract.swift` に集約し、Presenter / Interactor はプロトコル経由で差し替えできるようにしています。
 

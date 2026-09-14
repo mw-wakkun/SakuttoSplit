@@ -103,6 +103,17 @@
         }
       }
     },
+    "group.new_name %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規グループ%lld"
+          }
+        }
+      }
+    },
     "group.ratio_placeholder" : {
       "extractionState" : "manual",
       "localizations" : {

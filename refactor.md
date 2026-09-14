@@ -228,7 +228,7 @@ init(
 - [x] フェーズ 1
 - [x] フェーズ 2
 - [x] フェーズ 3
-- [ ] フェーズ 4
+- [x] フェーズ 4
 
 ### フェーズ 0: 安全網（テストを先に固定 / 更新）
 
@@ -509,3 +509,12 @@ Binding とクロージャの混在について:
 - `AttendeeGroupDraft.isFixed` を削除し、`init` は `mode: PaymentMode = .ratio` を正本にした
 - 初期グループ・新規グループ・Preview・テストの `isFixed:` を `mode: .fixed` / `mode: .ratio` に置換
 - Presenter 初期状態の部長 = 固定、一般 = 割合をテストで固定。計算期待値は変更していない
+
+### フェーズ 4（一貫性の仕上げ）
+
+- `SplitValidationIssue` を `SakuttoSplitValidationIssue` にリネーム
+- `RoundingUnit.displayName` を Entity から削除。Picker は `rawValue` + `unit.yen` で組む
+- 新規グループ名を `group.new_name %lld`（文言は「新規グループ%lld」）にキー化。シェア文の日本語は維持
+- `Localizable.xcstrings` の空キー `""` を削除
+- テスト Bundle ID を `io.github.mw-wakkun.SakuttoSplitTests` へ。`remoteInfo` / `productName` の `LetsSplitTheBill*` を現行ターゲット名へ。アプリ Bundle ID は未変更
+- README を所有権・契約・人数仕様（1...999）と一致させた。`refactor_splitView.md` は履歴として残置

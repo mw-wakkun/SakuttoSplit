@@ -75,7 +75,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     func didTapAddGroup() {
         applyUpdate { state in
-            let newGroupName = "新規グループ\(state.groups.count + 1)"
+            let newGroupName = String(localized: "group.new_name \(state.groups.count + 1)")
             state.groups.append(
                 AttendeeGroupDraft(name: newGroupName, countText: "1", mode: .ratio, ratioText: "1.0")
             )
@@ -125,7 +125,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         groupsEmpty: Bool,
         totalAmountText: String,
         input: BillCalculationInput
-    ) -> SplitValidationIssue? {
+    ) -> SakuttoSplitValidationIssue? {
         if groupsEmpty {
             return .noGroups
         }

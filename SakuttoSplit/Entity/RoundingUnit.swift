@@ -14,8 +14,4 @@ enum RoundingUnit: Int, CaseIterable, Equatable, Sendable {
     case hundred = 100
     case fiveHundred = 500
     case thousand = 1000
-
-    var displayName: String {
-        "\(rawValue)円"
-    }
 }

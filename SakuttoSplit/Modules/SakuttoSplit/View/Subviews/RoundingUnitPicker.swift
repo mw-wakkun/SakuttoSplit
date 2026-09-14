@@ -14,7 +14,7 @@ struct RoundingUnitPicker: View {
     var body: some View {
         Picker("rounding_unit.title", selection: $selection) {
             ForEach(RoundingUnit.allCases, id: \.self) { unit in
-                Text(unit.displayName).tag(unit)
+                (Text(verbatim: "\(unit.rawValue)") + Text("unit.yen")).tag(unit)
             }
         }
     }

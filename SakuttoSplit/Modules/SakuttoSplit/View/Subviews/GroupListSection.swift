@@ -63,7 +63,10 @@ private struct GroupListSectionPreview: View {
                 onRatioChange: { update($0, \.ratioText, $1) },
                 onAdd: {
                     groups.append(
-                        AttendeeGroupDraft(name: "新規グループ\(groups.count + 1)", countText: "1")
+                        AttendeeGroupDraft(
+                            name: String(localized: "group.new_name \(groups.count + 1)"),
+                            countText: "1"
+                        )
                     )
                 },
                 onRemove: { id in

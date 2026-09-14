@@ -16,7 +16,7 @@
 			containerPortal = 7FDD97C42FA58CB10063A443 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 7FDD97CB2FA58CB10063A443;
-			remoteInfo = LetsSplitTheBill;
+			remoteInfo = SakuttoSplit;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -116,7 +116,7 @@
 				7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */,
 			);
 			name = SakuttoSplitTests;
-			productName = LetsSplitTheBillTests;
+			productName = SakuttoSplitTests;
 			productReference = 7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -139,7 +139,7 @@
 			packageProductDependencies = (
 				7FCB1D3230271BE900F74351 /* GoogleMobileAds */,
 			);
-			productName = LetsSplitTheBill;
+			productName = SakuttoSplit;
 			productReference = 7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -237,7 +237,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.wkwk.LetsSplitTheBillTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.mw-wakkun.SakuttoSplitTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -258,7 +258,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.wkwk.LetsSplitTheBillTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.mw-wakkun.SakuttoSplitTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
