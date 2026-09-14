@@ -5,6 +5,7 @@
 //  Created by masafumi wakugawa on 2026/05/02.
 //
 
+import SwiftUI
 import XCTest
 @testable import SakuttoSplit
 
@@ -25,6 +26,20 @@ final class SakuttoSplitRouterTests: XCTestCase {
         )
 
         XCTAssertEqual(module.bannerAdUnitID, "ca-app-pub-test/injected")
+    }
+
+    /// 組み立て後の presenter はジェネリック View に型推論で渡せる
+    func testAssembleModule_PresenterTypeInfersGenericView() {
+        let module = SakuttoSplitRouter.assembleModule()
+        let view = SakuttoSplitView(
+            presenter: module.presenter,
+            bannerAdUnitID: module.bannerAdUnitID,
+            isAdsSDKReady: false
+        )
+
+        XCTAssertEqual(view.presenter.viewState.groups.count, 2)
+        XCTAssertEqual(view.bannerAdUnitID, module.bannerAdUnitID)
+        XCTAssertFalse(view.isAdsSDKReady)
     }
 }
 

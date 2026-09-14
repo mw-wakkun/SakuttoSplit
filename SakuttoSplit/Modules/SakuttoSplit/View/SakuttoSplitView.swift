@@ -8,9 +8,9 @@
 import SwiftUI
 
 /// 割り勘計算画面。セクションの組み立てと Intent 転送だけを行う
-struct SakuttoSplitView: View {
+struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
-    @ObservedObject var presenter: SakuttoSplitPresenter
+    @ObservedObject var presenter: Presenter
     let bannerAdUnitID: String
     let isAdsSDKReady: Bool
     @FocusState private var focusedField: SakuttoSplitFocus?
@@ -43,8 +43,7 @@ struct SakuttoSplitView: View {
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
                             shareText: presenter.viewState.shareText,
-                            validationIssue: presenter.viewState.validationIssue,
-                            isShareEnabled: presenter.viewState.isShareEnabled
+                            validationIssue: presenter.viewState.validationIssue
                         )
                     }
                 }

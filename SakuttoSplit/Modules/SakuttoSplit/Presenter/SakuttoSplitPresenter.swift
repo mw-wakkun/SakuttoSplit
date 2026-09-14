@@ -10,7 +10,7 @@ import Foundation
 
 /// View の状態管理と、Interactor への計算依頼を行うプレゼンター
 @MainActor
-final class SakuttoSplitPresenter: SakuttoSplitPresentable {
+final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     @Published private(set) var viewState: SakuttoSplitViewState
 
@@ -86,10 +86,6 @@ final class SakuttoSplitPresenter: SakuttoSplitPresentable {
         applyUpdate { state in
             state.groups.removeAll { $0.id == id }
         }
-    }
-
-    func shareText() -> String {
-        viewState.shareText
     }
 
     /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える

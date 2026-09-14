@@ -182,7 +182,6 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         let expected = Self.expectedShareTextForDefaultGroupsTotal35000
         XCTAssertEqual(presenter.viewState.shareText, expected)
-        XCTAssertEqual(presenter.shareText(), expected)
         XCTAssertNil(presenter.viewState.validationIssue)
         XCTAssertTrue(presenter.viewState.isShareEnabled)
     }
@@ -200,7 +199,6 @@ final class SakuttoSplitPresenterTests: XCTestCase {
             presenter.viewState.shareText,
             Self.expectedShareTextForDefaultGroupsTotal35000
         )
-        XCTAssertEqual(presenter.shareText(), presenter.viewState.shareText)
     }
 
     func testViewState_UpdatesResultsInTheSameAssignmentAsInput() {

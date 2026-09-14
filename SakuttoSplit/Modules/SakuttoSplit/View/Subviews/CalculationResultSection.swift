@@ -13,7 +13,6 @@ struct CalculationResultSection: View {
     let difference: Int
     let shareText: String
     let validationIssue: SplitValidationIssue?
-    let isShareEnabled: Bool
 
     var body: some View {
         ForEach(results) { result in
@@ -31,7 +30,7 @@ struct CalculationResultSection: View {
         }
 
         // ShareLink + listRowBackground は EquatableView に包むと行背景が落ち、白文字が見えなくなる
-        ShareResultButton(shareText: shareText, isEnabled: isShareEnabled)
+        ShareResultButton(shareText: shareText, isEnabled: validationIssue == nil)
     }
 }
 
@@ -73,8 +72,7 @@ private extension SplitValidationIssue {
             ],
             difference: -200,
             shareText: "🍻 本日のお会計 🍻",
-            validationIssue: nil,
-            isShareEnabled: true
+            validationIssue: nil
         )
     }
 }
@@ -85,8 +83,7 @@ private extension SplitValidationIssue {
             results: [],
             difference: 0,
             shareText: "",
-            validationIssue: .emptyTotalAmount,
-            isShareEnabled: false
+            validationIssue: .emptyTotalAmount
         )
     }
 }

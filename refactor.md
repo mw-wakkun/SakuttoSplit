@@ -226,7 +226,7 @@ init(
 
 - [x] フェーズ 0
 - [x] フェーズ 1
-- [ ] フェーズ 2
+- [x] フェーズ 2
 - [ ] フェーズ 3
 - [ ] フェーズ 4
 
@@ -494,3 +494,12 @@ Binding とクロージャの混在について:
 - シェア文は `applyCalculation` 内で `viewState.shareText` に代入。View はメソッドではなく ViewState を渡す。`shareText()` は薄ラッパとして残し、契約削除はフェーズ 2
 - `ShareResultButton` は `.disabled`（＋無効時 opacity）。`allowsHitTesting` だけには依存しない
 - Router テストを Module DTO / Ad 注入前提に更新。シェア文更新で計算が増えないことを Presenter の spy で固定
+
+### フェーズ 2（契約を実装と一致させる）
+
+- `SakuttoSplitPresentable` を `SakuttoSplitPresenterProtocol` にリネームし、`shareText()` をプロトコルと Presenter から削除。文面の正本は `viewState.shareText`
+- `SakuttoSplitView` を `SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>` にした。View ファイルに具象 Presenter 名は出ない
+- `SakuttoSplitRouterProtocol` を削除。Contract は SwiftUI 非依存（`ObservableObject` のため `import Combine` は残す）
+- `CalculationResultSection` は `isShareEnabled` 引数をやめ、`validationIssue == nil` からシェア可否を導出
+- Router テストで assemble 後の presenter をジェネリック View に渡し、型推論できることを固定
+- Binding アダプタとグループ行クロージャの使い分けは意図どおり残し、README に 1 行追記

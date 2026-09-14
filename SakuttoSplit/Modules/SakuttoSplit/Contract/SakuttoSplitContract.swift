@@ -10,7 +10,7 @@ import Foundation
 
 /// View が描画する状態と、ユーザー操作の Intent を公開する
 @MainActor
-protocol SakuttoSplitPresentable: ObservableObject {
+protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var viewState: SakuttoSplitViewState { get }
     func didChangeTotalAmount(_ text: String)
     func didChangeRoundingUnit(_ unit: RoundingUnit)
@@ -21,18 +21,11 @@ protocol SakuttoSplitPresentable: ObservableObject {
     func didChangeRatio(id: UUID, text: String)
     func didTapAddGroup()
     func didTapRemoveGroup(id: UUID)
-    func shareText() -> String
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする
 protocol SakuttoSplitInteractorProtocol {
     func calculateBill(_ input: BillCalculationInput) -> BillCalculationOutput
-}
-
-/// モジュール組み立て。戻り値は型消去しない
-@MainActor
-protocol SakuttoSplitRouterProtocol {
-    static func assembleModule() -> SakuttoSplitModule
 }
 
 /// 広告ユニット ID の供給

@@ -17,7 +17,7 @@
 ## アーキテクチャ
 View は描画と Intent の転送だけを行い、判断・正規化・計算起動は Presenter、割り勘計算は Interactor、生成物は Entity、組み立ては Router が担います。
 
-- **View**: `SakuttoSplitView` がセクションを組み立てる。サブビューは Presenter 全体を受け取らず、値・Binding・クロージャだけを受ける。
+- **View**: `SakuttoSplitView` は `SakuttoSplitPresenterProtocol` に対してジェネリック。サブビューは Presenter 全体を受け取らず、コントロールが要求する Binding アダプタと、リスト行の Intent クロージャを使い分ける。
 - **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面と入力バリデーションもここ。
 - **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
 - **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
