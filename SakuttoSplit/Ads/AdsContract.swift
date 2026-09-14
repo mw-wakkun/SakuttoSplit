@@ -19,7 +19,18 @@ protocol AdsControlling: ObservableObject {
     func startLoadingIfNeeded() async
     func refreshAdFreeState()
     func didTapHideAdsForToday(from rootViewController: UIViewController)
+    func presentRewarded(
+        from rootViewController: UIViewController,
+        purpose: RewardedPurpose,
+        onEarned: (() -> Void)?
+    )
     func presentInterstitialIfEligible(from rootViewController: UIViewController)
+}
+
+/// リワード視聴の目的。完了時に該当報酬だけ付与する
+enum RewardedPurpose: Equatable {
+    case adFree24h
+    case extraMemberSetSlot
 }
 
 /// SDK をテストから切り離すためのインタースティシャル読み込み

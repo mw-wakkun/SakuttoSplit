@@ -367,6 +367,28 @@
         }
       }
     },
+    "set.reward_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動画を最後まで見ると、編成を保存できる枠が 1 つ増えます。"
+          }
+        }
+      }
+    },
+    "set.reward_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存枠を 1 つ増やす"
+          }
+        }
+      }
+    },
     "set.save" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -374,6 +396,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "この編成を保存"
+          }
+        }
+      }
+    },
+    "set.slot_full_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使わない編成を削除してください。"
+          }
+        }
+      }
+    },
+    "set.slot_full_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存できる編成は 3 件までです"
           }
         }
       }

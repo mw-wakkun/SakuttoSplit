@@ -18,7 +18,8 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @State private var rootViewControllerBox = RootViewControllerBox()
     @State private var isRestoreConfirmPresented = false
     @State private var isSaveMemberSetPresented = false
-    @State private var isNoMemberSetSlotPresented = false
+    @State private var isRewardSlotPresented = false
+    @State private var isSlotFullPresented = false
     @State private var isApplyMemberSetConfirmPresented = false
     @State private var memberSetNameDraft = ""
     @State private var pendingApplyMemberSetID: UUID?
@@ -45,7 +46,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             onAdd: { presenter.didTapAddGroup() },
                             onRemove: { presenter.didTapRemoveGroup(id: $0) }
                         )
-                        Button("set.save") {
+                        Button(saveMemberSetButtonTitle) {
                             saveMemberSetTapped()
                         }
                         .disabled(presenter.viewState.groups.isEmpty)
@@ -119,8 +120,24 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             }
             Button(role: .cancel) {}
         }
-        .alert("set.no_slot", isPresented: $isNoMemberSetSlotPresented) {
+        .alert(
+            "set.reward_title",
+            isPresented: $isRewardSlotPresented
+        ) {
+            Button("set.reward_title") {
+                presentExtraSlotRewarded()
+            }
             Button(role: .cancel) {}
+        } message: {
+            Text("set.reward_message")
+        }
+        .alert(
+            "set.slot_full_title",
+            isPresented: $isSlotFullPresented
+        ) {
+            Button(role: .cancel) {}
+        } message: {
+            Text("set.slot_full_message")
         }
         .alert(
             "set.apply_confirm_title",
@@ -181,13 +198,41 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         focusedField = nil
         guard !presenter.viewState.groups.isEmpty else { return }
         if presenter.sessionChrome.hasEmptyMemberSetSlot {
-            memberSetNameDraft = String(
-                localized: "set.default_name \(presenter.sessionChrome.memberSets.count + 1)"
-            )
-            isSaveMemberSetPresented = true
+            presentSaveNamePrompt()
+        } else if presenter.sessionChrome.canUnlockMemberSetSlot {
+            isRewardSlotPresented = true
         } else {
-            isNoMemberSetSlotPresented = true
+            isSlotFullPresented = true
         }
+    }
+
+    private func presentSaveNamePrompt() {
+        memberSetNameDraft = String(
+            localized: "set.default_name \(presenter.sessionChrome.memberSets.count + 1)"
+        )
+        isSaveMemberSetPresented = true
+    }
+
+    private func presentExtraSlotRewarded() {
+        guard let rootViewController = rootViewControllerBox.rootViewController else {
+            return
+        }
+        adsController.presentRewarded(
+            from: rootViewController,
+            purpose: .extraMemberSetSlot
+        ) {
+            presenter.didUnlockMemberSetSlot()
+            guard presenter.sessionChrome.hasEmptyMemberSetSlot else { return }
+            presentSaveNamePrompt()
+        }
+    }
+
+    private var saveMemberSetButtonTitle: LocalizedStringKey {
+        if !presenter.sessionChrome.hasEmptyMemberSetSlot,
+           !presenter.sessionChrome.canUnlockMemberSetSlot {
+            return "set.slot_full_title"
+        }
+        return "set.save"
     }
 
     private func applyMemberSetTapped(id: UUID) {

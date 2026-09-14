@@ -708,6 +708,41 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
     }
 
+    func testDidUnlockMemberSetSlot_IncrementsOnce_ThenAllowsSecondSave() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didTapSaveMemberSet(name: "1件目")
+        XCTAssertFalse(presenter.sessionChrome.hasEmptyMemberSetSlot)
+        let callsBeforeUnlock = spy.calculateCallCount
+
+        presenter.didUnlockMemberSetSlot()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeUnlock)
+        XCTAssertEqual(store.slotCount, 2)
+        XCTAssertEqual(presenter.sessionChrome.slotCount, 2)
+        XCTAssertTrue(presenter.sessionChrome.hasEmptyMemberSetSlot)
+        XCTAssertTrue(presenter.sessionChrome.canUnlockMemberSetSlot)
+
+        presenter.didTapSaveMemberSet(name: "2件目")
+
+        XCTAssertEqual(store.memberSets.map(\.name), ["1件目", "2件目"])
+        XCTAssertFalse(presenter.sessionChrome.hasEmptyMemberSetSlot)
+    }
+
+    func testDidUnlockMemberSetSlot_WhenAlreadyThree_DoesNotChange() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore(slotCount: 3)
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        XCTAssertFalse(presenter.sessionChrome.canUnlockMemberSetSlot)
+
+        presenter.didUnlockMemberSetSlot()
+
+        XCTAssertEqual(store.slotCount, 3)
+        XCTAssertEqual(presenter.sessionChrome.slotCount, 3)
+        XCTAssertFalse(presenter.sessionChrome.canUnlockMemberSetSlot)
+    }
+
     func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeExistingLastBill() {
         let spy = CalculatingSpyInteractor()
         let store = InMemoryBillSessionStore()

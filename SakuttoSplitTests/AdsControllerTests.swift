@@ -180,6 +180,134 @@ final class AdsControllerTests: XCTestCase {
         XCTAssertEqual(rewarded.presentCallCount, 1)
     }
 
+    func testPresentRewarded_AdFree24h_OnEarn_DoesNotInvokeOnEarned() async {
+        let rewarded = FakeRewarded()
+        let rewardedLoader = StubRewardedLoader(ad: rewarded)
+        let controller = makeController(rewardedLoader: rewardedLoader)
+        await controller.startLoadingIfNeeded()
+        var onEarnedCount = 0
+
+        controller.presentRewarded(from: UIViewController(), purpose: .adFree24h) {
+            onEarnedCount += 1
+        }
+        rewarded.onDidEarnReward?()
+
+        XCTAssertEqual(onEarnedCount, 0)
+        XCTAssertTrue(controller.isAdFree)
+    }
+
+    func testPresentRewarded_ExtraSlot_OnEarn_CallsOnEarned_DoesNotGrantAdFree() async {
+        let rewarded = FakeRewarded()
+        let rewardedLoader = StubRewardedLoader(ad: rewarded)
+        let controller = makeController(rewardedLoader: rewardedLoader)
+        await controller.startLoadingIfNeeded()
+        var onEarnedCount = 0
+
+        controller.presentRewarded(from: UIViewController(), purpose: .extraMemberSetSlot) {
+            onEarnedCount += 1
+        }
+        rewarded.onDidEarnReward?()
+
+        XCTAssertEqual(rewarded.presentCallCount, 1)
+        XCTAssertEqual(onEarnedCount, 1)
+        XCTAssertFalse(controller.isAdFree)
+        XCTAssertNil(AdFreeStore(defaults: defaults).adFreeUntil)
+    }
+
+    func testPresentRewarded_ExtraSlot_DismissWithoutReward_DoesNotCallOnEarned() async {
+        let rewarded = FakeRewarded()
+        let rewardedLoader = StubRewardedLoader(ad: rewarded)
+        let controller = makeController(rewardedLoader: rewardedLoader)
+        await controller.startLoadingIfNeeded()
+        var onEarnedCount = 0
+
+        controller.presentRewarded(from: UIViewController(), purpose: .extraMemberSetSlot) {
+            onEarnedCount += 1
+        }
+        rewarded.onDidFinish?()
+        await controller.rewardedDidFinish()
+
+        XCTAssertEqual(onEarnedCount, 0)
+        XCTAssertFalse(controller.isAdFree)
+        XCTAssertNil(AdFreeStore(defaults: defaults).adFreeUntil)
+    }
+
+    func testPresentRewarded_ExtraSlot_WhenAdFree_StillPresents_DoesNotExtendAdFree() async {
+        let rewarded = FakeRewarded()
+        let rewardedLoader = StubRewardedLoader(ad: rewarded)
+        let store = AdFreeStore(defaults: defaults)
+        let start = Date(timeIntervalSince1970: 1_000)
+        let duration: TimeInterval = 3_600
+        store.grant(from: start, duration: duration)
+        let until = store.adFreeUntil
+        let controller = makeController(
+            rewardedLoader: rewardedLoader,
+            store: store,
+            start: start
+        )
+        await controller.startLoadingIfNeeded()
+        var onEarnedCount = 0
+
+        XCTAssertTrue(controller.isAdFree)
+        controller.presentRewarded(from: UIViewController(), purpose: .extraMemberSetSlot) {
+            onEarnedCount += 1
+        }
+        rewarded.onDidEarnReward?()
+
+        XCTAssertEqual(rewarded.presentCallCount, 1)
+        XCTAssertEqual(onEarnedCount, 1)
+        XCTAssertTrue(controller.isAdFree)
+        XCTAssertEqual(store.adFreeUntil, until)
+    }
+
+    func testPresentRewarded_WhenAlreadyPresenting_IgnoresSecond() async {
+        let rewarded = FakeRewarded()
+        let rewardedLoader = StubRewardedLoader(ad: rewarded)
+        let controller = makeController(rewardedLoader: rewardedLoader)
+        await controller.startLoadingIfNeeded()
+
+        controller.presentRewarded(from: UIViewController(), purpose: .extraMemberSetSlot)
+        controller.didTapHideAdsForToday(from: UIViewController())
+
+        XCTAssertEqual(rewarded.presentCallCount, 1)
+        XCTAssertFalse(controller.isAdFree)
+    }
+
+    func testPresentRewarded_ExtraSlot_WhenNotLoaded_SetsUnavailable() async {
+        let rewardedLoader = StubRewardedLoader(ad: nil)
+        let controller = makeController(rewardedLoader: rewardedLoader)
+        await controller.startLoadingIfNeeded()
+        var onEarnedCount = 0
+
+        controller.presentRewarded(from: UIViewController(), purpose: .extraMemberSetSlot) {
+            onEarnedCount += 1
+        }
+
+        XCTAssertTrue(controller.rewardUnavailable)
+        XCTAssertEqual(onEarnedCount, 0)
+        XCTAssertFalse(controller.isAdFree)
+    }
+
+    func testStartLoadingIfNeeded_WhenAdFree_LoadsRewardedNotInterstitial() async {
+        let interstitialLoader = StubInterstitialLoader(ad: FakeInterstitial())
+        let rewardedLoader = StubRewardedLoader(ad: FakeRewarded())
+        let store = AdFreeStore(defaults: defaults)
+        let start = Date(timeIntervalSince1970: 1_000)
+        store.grant(from: start, duration: 3_600)
+        let controller = makeController(
+            loader: interstitialLoader,
+            rewardedLoader: rewardedLoader,
+            store: store,
+            start: start
+        )
+
+        await controller.startLoadingIfNeeded()
+
+        XCTAssertTrue(controller.isAdFree)
+        XCTAssertEqual(interstitialLoader.loadCount, 0)
+        XCTAssertEqual(rewardedLoader.loadCount, 1)
+    }
+
     func testAdFree_ExpiresAfterInjectedDuration_AllowsBannerAgain() async {
         let rewarded = FakeRewarded()
         var now = Date(timeIntervalSince1970: 1_000)

@@ -176,6 +176,12 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         refreshSessionChrome()
     }
 
+    /// リワード完了時だけ枠を 1 つ増やす。既に上限なら何もしない
+    func didUnlockMemberSetSlot() {
+        guard sessionStore.unlockExtraSlot() else { return }
+        refreshSessionChrome()
+    }
+
     private func saveLastBillIfValid() {
         guard viewState.validationIssue == nil else { return }
         sessionStore.saveLastBill(makeSnapshot())

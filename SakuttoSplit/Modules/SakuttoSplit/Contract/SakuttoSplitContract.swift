@@ -34,6 +34,7 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapCloseMemberSetSheet()
     func didTapApplyMemberSet(id: UUID)
     func didTapDeleteMemberSet(id: UUID)
+    func didUnlockMemberSetSlot()
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする

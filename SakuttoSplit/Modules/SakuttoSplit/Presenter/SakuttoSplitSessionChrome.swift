@@ -17,4 +17,8 @@ struct SakuttoSplitSessionChrome: Equatable {
     var hasEmptyMemberSetSlot: Bool {
         memberSets.count < slotCount
     }
+
+    var canUnlockMemberSetSlot: Bool {
+        slotCount < BillSessionStore.maxSlotCount
+    }
 }

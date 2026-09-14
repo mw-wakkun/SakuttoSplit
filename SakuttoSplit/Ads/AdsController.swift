@@ -37,6 +37,8 @@ final class AdsController: ObservableObject, AdsControlling {
     private var presentingRewarded: (any RewardedPresenting)?
     private var isLoadingRewarded = false
     private var rewardUnavailableClearTask: Task<Void, Never>?
+    private var pendingReward: RewardedPurpose?
+    private var pendingOnEarned: (() -> Void)?
 
     convenience init(
         interstitialAdUnitID: String,
@@ -93,20 +95,33 @@ final class AdsController: ObservableObject, AdsControlling {
 
     func startLoadingIfNeeded() async {
         refreshAdFreeState()
-        guard !isAdFree else { return }
-        await loadInterstitialIfNeeded()
+        if !isAdFree {
+            await loadInterstitialIfNeeded()
+        }
         await loadRewardedIfNeeded()
     }
 
     func didTapHideAdsForToday(from rootViewController: UIViewController) {
-        refreshAdFreeState()
-        guard !isAdFree else { return }
+        presentRewarded(from: rootViewController, purpose: .adFree24h)
+    }
+
+    func presentRewarded(
+        from rootViewController: UIViewController,
+        purpose: RewardedPurpose,
+        onEarned: (() -> Void)? = nil
+    ) {
+        if purpose == .adFree24h {
+            refreshAdFreeState()
+            guard !isAdFree else { return }
+        }
         guard presentingRewarded == nil else { return }
         guard let ad = readyRewarded else {
             showRewardUnavailable()
             return
         }
 
+        pendingReward = purpose
+        pendingOnEarned = onEarned
         readyRewarded = nil
         presentingRewarded = ad
         ad.present(from: rootViewController)
@@ -136,7 +151,24 @@ final class AdsController: ObservableObject, AdsControlling {
 
     func rewardedDidFinish() async {
         presentingRewarded = nil
+        pendingReward = nil
+        pendingOnEarned = nil
         await startLoadingIfNeeded()
+    }
+
+    private func handleEarnedReward() {
+        let purpose = pendingReward
+        let onEarned = pendingOnEarned
+        pendingReward = nil
+        pendingOnEarned = nil
+        switch purpose {
+        case .adFree24h:
+            grantAdFree()
+        case .extraMemberSetSlot:
+            onEarned?()
+        case nil:
+            break
+        }
     }
 
     private func grantAdFree() {
@@ -180,7 +212,7 @@ final class AdsController: ObservableObject, AdsControlling {
         isLoadingRewarded = true
         let loaded = await rewardedLoader.load(adUnitID: rewardedAdUnitID)
         loaded?.onDidEarnReward = { [weak self] in
-            self?.grantAdFree()
+            self?.handleEarnedReward()
         }
         loaded?.onDidFinish = { [weak self] in
             Task { await self?.rewardedDidFinish() }
