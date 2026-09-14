@@ -13,6 +13,10 @@ import Foundation
 protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var viewState: SakuttoSplitViewState { get }
     var sessionChrome: SakuttoSplitSessionChrome { get }
+    /// 席の済/未済。計算の viewState とは独立する。妥当でない入力では空
+    var collectionState: CollectionState { get }
+    /// 未払い席だけの再シェア文。席が無い・全員済は空文字
+    var unpaidShareText: String { get }
     /// 起動直後・精算直後の initial ではなく、前回と入力が違うときだけ確認する
     var needsRestoreConfirmation: Bool { get }
     func didChangeTotalAmount(_ text: String)
@@ -27,6 +31,8 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapSettleComplete()
     func didEnterBackground()
     func didTapRestoreLastBill()
+    /// その席の済/未済だけ反転する。計算しない
+    func didTapToggleCollectionSeat(id: CollectionSeatID)
     /// 現在グループが initial の既定 2 件と違うとき、適用前に確認する
     var needsMemberSetApplyConfirmation: Bool { get }
     func didTapSaveMemberSet(name: String)

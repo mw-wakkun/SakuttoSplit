@@ -79,4 +79,27 @@ struct CollectionState: Equatable {
     var paidSeatKeys: [String] {
         seats.filter(\.isPaid).map(\.id.rawValue)
     }
+
+    /// 妥当な会計のときだけ席を作る。済は席 ID で引き継ぎ、今いないキーは捨てる
+    static func reconcile(
+        groups: [AttendeeGroupDraft],
+        results: [GroupCalculationResult],
+        paidSeatKeys: Set<String>,
+        expandMaxCount: Int
+    ) -> CollectionState {
+        let amounts = Dictionary(
+            uniqueKeysWithValues: results.map { ($0.groupID, $0.amountPerPerson) }
+        )
+        let seats = groups.flatMap { group in
+            CollectionSeat.make(
+                groupID: group.id,
+                name: group.name,
+                count: group.toDomain().count,
+                amountPerPerson: amounts[group.id] ?? 0,
+                expandMaxCount: expandMaxCount,
+                paidSeatKeys: paidSeatKeys
+            )
+        }
+        return CollectionState(seats: seats)
+    }
 }

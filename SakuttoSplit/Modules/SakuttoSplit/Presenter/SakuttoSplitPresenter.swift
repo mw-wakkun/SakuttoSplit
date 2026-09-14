@@ -14,9 +14,17 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     @Published private(set) var viewState: SakuttoSplitViewState
     @Published private(set) var sessionChrome = SakuttoSplitSessionChrome()
+    @Published private(set) var collectionState = CollectionState.empty
 
     private let interactor: SakuttoSplitInteractorProtocol
     private let sessionStore: any BillSessionStoring
+
+    var unpaidShareText: String {
+        ShareTextBuilder.buildUnpaid(
+            totalAmountText: viewState.totalAmountText,
+            unpaidSeats: collectionState.unpaidSeats
+        )
+    }
 
     var needsRestoreConfirmation: Bool {
         guard let lastBill = sessionStore.lastBill else { return false }
@@ -55,6 +63,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
         self.sessionChrome = makeSessionChrome(isMemberSetSheetPresented: false)
+        reconcileCollection()
     }
 
     func didChangeTotalAmount(_ text: String) {
@@ -127,7 +136,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         saveLastBillIfValid()
     }
 
-    /// 前回会計を入力へ流し込み、計算は 1 回。確認ダイアログは View 側
+    /// 前回会計を入力へ流し込み、計算は 1 回。済はスナップショットから載せ直す
     func didTapRestoreLastBill() {
         guard let snapshot = sessionStore.lastBill else { return }
         applyUpdate { state in
@@ -135,6 +144,15 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
             state.roundingUnit = snapshot.roundingUnit
             state.groups = snapshot.groups
         }
+        reconcileCollection(paidSeatKeys: Set(snapshot.paidSeatKeys))
+    }
+
+    /// その席の済/未済だけ反転する。applyUpdate は呼ばない
+    func didTapToggleCollectionSeat(id: CollectionSeatID) {
+        var next = collectionState
+        guard let index = next.seats.firstIndex(where: { $0.id == id }) else { return }
+        next.seats[index].isPaid.toggle()
+        collectionState = next
     }
 
     /// 空き枠があるときだけ編成を保存する。総額は持たない。計算は走らせない
@@ -161,13 +179,14 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         setMemberSetSheetPresented(false)
     }
 
-    /// 総額は維持し、端数とグループをセットで置き換える。計算は 1 回
+    /// 総額は維持し、端数とグループをセットで置き換える。席は作り直し（すべて未払い）
     func didTapApplyMemberSet(id: UUID) {
         guard let memberSet = sessionStore.memberSets.first(where: { $0.id == id }) else { return }
         applyUpdate { state in
             state.roundingUnit = memberSet.roundingUnit
             state.groups = memberSet.groups
         }
+        reconcileCollection(paidSeatKeys: [])
         setMemberSetSheetPresented(false)
     }
 
@@ -212,8 +231,26 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         BillSnapshot(
             totalAmountText: viewState.totalAmountText,
             roundingUnit: viewState.roundingUnit,
-            groups: viewState.groups
+            groups: viewState.groups,
+            paidSeatKeys: collectionState.paidSeatKeys
         )
+    }
+
+    /// 妥当なときだけ席を作る。済は席 ID で引き継ぎ、validation 中は空（非表示相当）
+    private func reconcileCollection(paidSeatKeys: Set<String>? = nil) {
+        let next: CollectionState
+        if viewState.validationIssue == nil {
+            next = CollectionState.reconcile(
+                groups: viewState.groups,
+                results: viewState.results,
+                paidSeatKeys: paidSeatKeys ?? Set(collectionState.paidSeatKeys),
+                expandMaxCount: InputLimits.collectionExpandMaxCount
+            )
+        } else {
+            next = .empty
+        }
+        guard next != collectionState else { return }
+        collectionState = next
     }
 
     private static func matchesInitialInput(_ state: SakuttoSplitViewState) -> Bool {
@@ -234,6 +271,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         guard next != viewState else { return }
         Self.applyCalculation(to: &next, interactor: interactor)
         viewState = next
+        reconcileCollection()
     }
 
     private static func applyCalculation(

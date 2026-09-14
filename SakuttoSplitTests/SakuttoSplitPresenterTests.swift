@@ -835,7 +835,7 @@ final class SakuttoSplitPresenterTests: XCTestCase {
     """
 }
 
-private final class CalculatingSpyInteractor: SakuttoSplitInteractorProtocol {
+final class CalculatingSpyInteractor: SakuttoSplitInteractorProtocol {
     private(set) var calculateCallCount = 0
     private(set) var lastInput: BillCalculationInput?
     var stub: BillCalculationOutput?
