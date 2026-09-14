@@ -55,10 +55,8 @@ struct AdConfiguration: AdConfigurationProviding {
 
     /// 現行バナー本番 ID。`GADApplicationIdentifier` は変えない
     static let productionBannerAdUnitID = "ca-app-pub-9676260030977388/3738962239"
-    /// AdMob コンソールで Interstitial を新規発行して入れる。空のまま Store 提出しない
-    static let productionInterstitialAdUnitID = ""
-    /// AdMob コンソールで Rewarded を新規発行して入れる。空のまま Store 提出しない
-    static let productionRewardedAdUnitID = ""
+    static let productionInterstitialAdUnitID = "ca-app-pub-9676260030977388/7047443390"
+    static let productionRewardedAdUnitID = "ca-app-pub-9676260030977388/1795116714"
 }
 
 private enum GoogleTestAdUnitIDs {

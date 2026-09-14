@@ -36,12 +36,22 @@ final class SakuttoSplitRouterTests: XCTestCase {
         #endif
     }
 
-    func testProductionAdUnitIDs_BannerIsCurrentReleaseID() {
+    func testProductionAdUnitIDs_AreNonEmptyReleaseIDs() {
         XCTAssertEqual(
             AdConfiguration.productionBannerAdUnitID,
             "ca-app-pub-9676260030977388/3738962239"
         )
+        XCTAssertEqual(
+            AdConfiguration.productionInterstitialAdUnitID,
+            "ca-app-pub-9676260030977388/7047443390"
+        )
+        XCTAssertEqual(
+            AdConfiguration.productionRewardedAdUnitID,
+            "ca-app-pub-9676260030977388/1795116714"
+        )
         XCTAssertTrue(AdConfiguration.productionBannerAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
+        XCTAssertTrue(AdConfiguration.productionInterstitialAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
+        XCTAssertTrue(AdConfiguration.productionRewardedAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
     }
 
     func testAssembleModule_UsesInjectedAdConfiguration() {
