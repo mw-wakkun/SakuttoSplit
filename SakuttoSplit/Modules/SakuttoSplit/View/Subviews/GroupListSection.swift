@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 参加者グループ一覧と追加ボタン
+/// 参加者グループ一覧と追加ボタン。削除は swipe。保存/読込は置かない
 struct GroupListSection: View {
     let groups: [AttendeeGroupDraft]
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
@@ -18,6 +18,7 @@ struct GroupListSection: View {
     var onRatioChange: (UUID, String) -> Void
     var onAdd: () -> Void
     var onRemove: (UUID) -> Void
+    var onPaymentExpandedChange: (UUID, Bool) -> Void = { _, _ in }
 
     var body: some View {
         ForEach(groups) { group in
@@ -29,9 +30,14 @@ struct GroupListSection: View {
                 onModeChange: { onModeChange(group.id, $0) },
                 onFixedAmountChange: { onFixedAmountChange(group.id, $0) },
                 onRatioChange: { onRatioChange(group.id, $0) },
-                onRemove: { onRemove(group.id) }
+                onPaymentExpandedChange: { onPaymentExpandedChange(group.id, $0) }
             )
             .equatable()
+            .swipeActions(edge: .trailing) {
+                Button(role: .destructive) {
+                    onRemove(group.id)
+                }
+            }
         }
 
         Button(action: onAdd) {

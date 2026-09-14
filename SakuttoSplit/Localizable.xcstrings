@@ -230,7 +230,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "固定額"
+            "value" : "固定"
           }
         }
       }
@@ -241,7 +241,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "割合"
+            "value" : "割り勘"
           }
         }
       }
@@ -374,6 +374,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "入力中の内容を置き換えます"
+          }
+        }
+      }
+    },
+    "set.applied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編成を適用しました"
           }
         }
       }
@@ -517,6 +528,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保存できる編成は 3 件までです"
+          }
+        }
+      }
+    },
+    "set.undo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り消す"
           }
         }
       }

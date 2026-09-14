@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 端数処理単位の選択
+/// 端数処理単位の選択。常時 5 段にせずディスクロージャにする
 struct RoundingUnitPicker: View {
     @Binding var selection: RoundingUnit
 
@@ -17,6 +17,7 @@ struct RoundingUnitPicker: View {
                 (Text(verbatim: "\(unit.rawValue)") + Text("unit.yen")).tag(unit)
             }
         }
+        .pickerStyle(.navigationLink)
     }
 }
 
@@ -28,8 +29,10 @@ private struct RoundingUnitPickerPreview: View {
     @State private var selection = RoundingUnit.hundred
 
     var body: some View {
-        Form {
-            RoundingUnitPicker(selection: $selection)
+        NavigationStack {
+            Form {
+                RoundingUnitPicker(selection: $selection)
+            }
         }
     }
 }

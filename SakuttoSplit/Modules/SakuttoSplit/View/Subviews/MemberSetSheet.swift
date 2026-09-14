@@ -30,7 +30,7 @@ struct MemberSetSheet: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(memberSet.name)
                                     .foregroundStyle(.primary)
-                                Text(verbatim: "\(memberSet.groups.count)")
+                                Text(verbatim: memberSet.compositionPreview)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

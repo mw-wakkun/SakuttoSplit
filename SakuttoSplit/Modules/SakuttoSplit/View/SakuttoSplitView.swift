@@ -22,6 +22,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @State private var isRewardSlotPresented = false
     @State private var isSlotFullPresented = false
     @State private var memberSetNameDraft = ""
+    @State private var expandedPaymentGroupIDs: Set<UUID> = []
+    @State private var isMemberSetUndoBannerPresented = false
+    @State private var memberSetUndoBannerHideTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -46,16 +49,15 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             onFixedAmountChange: { presenter.didChangeFixedAmount(id: $0, text: $1) },
                             onRatioChange: { presenter.didChangeRatio(id: $0, text: $1) },
                             onAdd: { presenter.didTapAddGroup() },
-                            onRemove: { presenter.didTapRemoveGroup(id: $0) }
+                            onRemove: { presenter.didTapRemoveGroup(id: $0) },
+                            onPaymentExpandedChange: { id, expanded in
+                                if expanded {
+                                    expandedPaymentGroupIDs.insert(id)
+                                } else {
+                                    expandedPaymentGroupIDs.remove(id)
+                                }
+                            }
                         )
-                        Button(saveMemberSetButtonTitle) {
-                            saveMemberSetTapped()
-                        }
-                        .disabled(presenter.viewState.groups.isEmpty)
-                        Button("set.load") {
-                            focusedField = nil
-                            presenter.didTapOpenMemberSetSheet()
-                        }
                     }
 
                     Section("section.results") {
@@ -74,6 +76,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 .navigationTitle("app.title")
                 .navigationBarTitleDisplayMode(.inline)
                 .scrollDismissesKeyboard(.immediately)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    memberSetUndoBanner
+                }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         restoreToolbarItem
@@ -252,6 +257,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         focusedField = nil
         presenter.didTapCloseMemberSetSheet()
         presenter.didTapApplyMemberSet(id: id)
+        presentMemberSetUndoBanner()
     }
 
     private var memberSetSheetBinding: Binding<Bool> {
@@ -269,6 +275,16 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
     private var moreMenuToolbarItem: some View {
         Menu {
+            Section {
+                Button(saveMemberSetButtonTitle) {
+                    saveMemberSetTapped()
+                }
+                .disabled(presenter.viewState.groups.isEmpty)
+                Button("set.load") {
+                    focusedField = nil
+                    presenter.didTapOpenMemberSetSheet()
+                }
+            }
             Section {
                 if adsController.isAdFree {
                     Text("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
@@ -291,7 +307,10 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             }
         } else {
             Button("action.next") {
-                focusedField = focusedField?.next(in: presenter.viewState.groups)
+                focusedField = focusedField?.next(
+                    in: presenter.viewState.groups,
+                    isPaymentExpanded: { expandedPaymentGroupIDs.contains($0) }
+                )
             }
         }
     }
@@ -301,6 +320,35 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             return
         }
         adsController.didTapHideAdsForToday(from: rootViewController)
+    }
+
+    @ViewBuilder
+    private var memberSetUndoBanner: some View {
+        if isMemberSetUndoBannerPresented {
+            HStack {
+                Text("set.applied")
+                Spacer()
+                Button("set.undo") {
+                    memberSetUndoBannerHideTask?.cancel()
+                    isMemberSetUndoBannerPresented = false
+                    presenter.didTapUndoMemberSetApply()
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color(uiColor: .secondarySystemBackground))
+        }
+    }
+
+    private func presentMemberSetUndoBanner() {
+        memberSetUndoBannerHideTask?.cancel()
+        isMemberSetUndoBannerPresented = true
+        memberSetUndoBannerHideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            isMemberSetUndoBannerPresented = false
+        }
     }
 }
 

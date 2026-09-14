@@ -37,4 +37,10 @@ struct MemberSet: Identifiable, Equatable, Codable {
     var isCurrentSchema: Bool {
         schemaVersion == Self.currentSchemaVersion
     }
+
+    /// シート副次行。例: `部長 1 / 一般 4 · 100円`
+    var compositionPreview: String {
+        let groupsText = groups.map { "\($0.name) \($0.countText)" }.joined(separator: " / ")
+        return "\(groupsText) · \(roundingUnit.rawValue)\(String(localized: "unit.yen"))"
+    }
 }

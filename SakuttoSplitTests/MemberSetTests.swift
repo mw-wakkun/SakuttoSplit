@@ -42,4 +42,17 @@ final class MemberSetTests: XCTestCase {
         XCTAssertEqual(decoded.createdAt, createdAt)
         XCTAssertEqual(decoded, memberSet)
     }
+
+    func testCompositionPreview_JoinsGroupNameCountAndRoundingUnit() {
+        let memberSet = MemberSet(
+            name: "いつもの飲み会",
+            roundingUnit: .hundred,
+            groups: [
+                AttendeeGroupDraft(name: "部長", countText: "1", mode: .fixed, fixedAmountText: "10000"),
+                AttendeeGroupDraft(name: "一般", countText: "4", mode: .ratio, ratioText: "1.0")
+            ]
+        )
+
+        XCTAssertEqual(memberSet.compositionPreview, "部長 1 / 一般 4 · 100円")
+    }
 }

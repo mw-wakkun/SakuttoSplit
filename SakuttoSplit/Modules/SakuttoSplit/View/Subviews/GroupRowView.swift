@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// グループ 1 行。`group` が等しいときだけ `body` を再評価する
+/// グループ 1 行。名前と人数は常時。支払いモードは折りたたみ。削除は親の swipe
 struct GroupRowView: View {
     let group: AttendeeGroupDraft
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
@@ -16,13 +16,14 @@ struct GroupRowView: View {
     var onModeChange: (PaymentMode) -> Void
     var onFixedAmountChange: (String) -> Void
     var onRatioChange: (String) -> Void
-    var onRemove: () -> Void
+    var onPaymentExpandedChange: (Bool) -> Void = { _ in }
+
+    @State private var isPaymentExpanded = false
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 TextField("group.name_placeholder", text: nameBinding)
-                    .textFieldStyle(.roundedBorder)
                     .focused(focusedField, equals: .groupName(group.id))
 
                 CountStepper(
@@ -30,24 +31,48 @@ struct GroupRowView: View {
                     focusedField: focusedField,
                     focusValue: .groupCount(group.id)
                 )
-
-                Button(role: .destructive, action: onRemove) {
-                    Image(systemName: "trash").foregroundStyle(.red)
-                }
-                .buttonStyle(.borderless)
             }
 
-            HStack {
-                Picker("group.mode", selection: modeBinding) {
-                    Text("payment_mode.ratio").tag(PaymentMode.ratio)
-                    Text("payment_mode.fixed").tag(PaymentMode.fixed)
-                }
-                .pickerStyle(.segmented)
-
-                detailInputField
+            if isPaymentExpanded {
+                expandedPaymentControls
+            } else {
+                collapsedPaymentCaption
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private var collapsedPaymentCaption: some View {
+        HStack(spacing: 4) {
+            Text(group.mode == .fixed ? "payment_mode.fixed" : "payment_mode.ratio")
+            if group.mode == .fixed {
+                Text(YenFormatting.grouped(fromDigitText: group.fixedAmountText))
+                Text("unit.yen")
+            } else {
+                Text(group.ratioText)
+                Text("unit.times")
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isPaymentExpanded = true
+            onPaymentExpandedChange(true)
+        }
+    }
+
+    private var expandedPaymentControls: some View {
+        HStack {
+            Picker("group.mode", selection: modeBinding) {
+                Text("payment_mode.ratio").tag(PaymentMode.ratio)
+                Text("payment_mode.fixed").tag(PaymentMode.fixed)
+            }
+            .pickerStyle(.segmented)
+
+            detailInputField
+        }
     }
 
     @ViewBuilder
@@ -61,12 +86,10 @@ struct GroupRowView: View {
                     focusedField: focusedField,
                     focusValue: .fixedAmount(group.id)
                 )
-                .textFieldStyle(.roundedBorder)
                 Text("unit.yen")
             } else {
                 TextField("group.ratio_placeholder", text: ratioBinding)
                     .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
                     .focused(focusedField, equals: .ratio(group.id))
                 Text("unit.times")
             }
@@ -104,7 +127,7 @@ extension GroupRowView: Equatable {
     }
 }
 
-#Preview {
+#Preview("folded") {
     GroupRowViewPreview()
 }
 
@@ -126,8 +149,7 @@ private struct GroupRowViewPreview: View {
                 onCountChange: { group.countText = $0 },
                 onModeChange: { group.mode = $0 },
                 onFixedAmountChange: { group.fixedAmountText = $0 },
-                onRatioChange: { group.ratioText = $0 },
-                onRemove: {}
+                onRatioChange: { group.ratioText = $0 }
             )
             .equatable()
         }
