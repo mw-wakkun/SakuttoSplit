@@ -495,3 +495,14 @@ ShareTextBuilder.build(
 - **フェーズ 0（完了）**: `CollectionSeat` / 席 ID / `InputLimits.collectionExpandMaxCount`、`BillSnapshot` schema 2 + v1 デコード（`paidSeatKeys == []`）、Store が schema 1...2 を受理、`ShareTextBuilder.buildUnpaid`。画面・Presenter の席状態は未着手。
 - **フェーズ 1（完了）**: Presenter に `collectionState` / `didTapToggleCollectionSeat` / 未払いシェア文。妥当な入力で席を生成。トグルは計算 0 回でメイン `shareText` 不変。人数増減で末尾の席が変化し済は維持。精算・background で `paidSeatKeys` を保存し、復元で戻す。セット適用で済をクリア。UI は未着手。
 - **フェーズ 2（完了）**: `CollectionSection` を結果セクションの緑シェアと精算完了の間に挿入。妥当なときだけ表示。未払い `ShareLink` は `.bordered`（緑にしない）。xcstrings と Preview（少人数 / 全員済 / 非表示）を追加。バナー規則は未変更。
+- **フェーズ 3（完了）**: README に回収ボード（無料、21 人以上はグループ 1 行、未払い再シェア）を追記。`MARKETING_VERSION = 2.0.0` を Info.plist テストで固定。Interactor / 本番広告 ID / バナー規則は未変更。手動チェックリストは自動テストで対応（実機の目視・15 秒後全画面は提出前）。
+
+手動チェックリスト（§7）との対応:
+1. 部長 1 + 一般 4 で 5 席、メインシェア文面不変 → PresenterCollection / ShareTextBuilder
+2. 済を保存し、起動は initial、復元で済が戻る → PresenterCollection 精算・復元、init は initial
+3. 精算完了で lastBill に済が残る。全画面は精算成功後のみ → PresenterCollection + AdsController
+4. 未払いシェアに済の席が出ない → ShareTextBuilder / PresenterCollection
+5. 全員済で未払いシェア disabled、「全員回収済み」キー → isUnpaidShareEnabled + xcstrings
+6. 一般 21 人は 1 行 → CollectionSeat / PresenterCollection
+7. シェア・トグルでは全画面なし。精算完了だけ `presentInterstitialIfEligible` → View の呼び出し箇所 + AdsController
+8. キーボード中バナーなし → AdBannerSlot

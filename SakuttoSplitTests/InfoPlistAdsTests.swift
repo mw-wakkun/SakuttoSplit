@@ -28,6 +28,10 @@ final class InfoPlistAdsTests: XCTestCase {
         XCTAssertNil(appInfo["NSUserTrackingUsageDescription"])
     }
 
+    func testMarketingVersion_Is2_0_0() {
+        XCTAssertEqual(appInfo["CFBundleShortVersionString"] as? String, "2.0.0")
+    }
+
     private var appInfo: [String: Any] {
         let bundle = Bundle(identifier: "io.github.mw-wakkun.SakuttoSplit") ?? Bundle.main
         return bundle.infoDictionary ?? [:]

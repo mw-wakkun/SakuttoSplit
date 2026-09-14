@@ -18,7 +18,7 @@
 View は描画と Intent の転送だけを行い、判断・正規化・計算起動は Presenter、割り勘計算は Interactor、生成物は Entity、組み立ては Router が担います。
 
 - **View**: `SakuttoSplitView` は `SakuttoSplitPresenterProtocol` に対してジェネリック。観察は `@ObservedObject` のみ。サブビューは Presenter 全体を受け取らず、コントロールが要求する Binding アダプタと、リスト行の Intent クロージャを使い分ける。
-- **Presenter**: `@MainActor`。`viewState`（計算の正本）と `sessionChrome`（復元・セット）を `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面は `viewState.shareText`、入力バリデーションもここ。
+- **Presenter**: `@MainActor`。`viewState`（計算の正本）、`sessionChrome`（復元・セット）、`collectionState`（席の済/未済。計算しない）を `@Published` で公開する。入力 Intent のたびに計算を 1 回行う。チェック操作は計算しない。シェア文面は `viewState.shareText`、入力バリデーションもここ。
 - **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
 - **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
 - **Router**: `SakuttoSplitModule`（Presenter、`AdsController`、banner / interstitial / rewarded の 3 ID）を返す。`AnyView` は使わない。
@@ -33,7 +33,7 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 `SakuttoSplitTests` で Interactor / Presenter / Router / Entity 変換 / 入力正規化を `XCTest` しています。テストファイル名とクラス名は対応させています。
 
 - Interactor: 均等割り、固定額と割合の混合、端数単位、空入力、固定額超過、同名グループなど
-- Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否、精算時の前回保存、復元、メンバーセット
+- Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否、精算時の前回保存、復元、メンバーセット、回収トグル（計算 0 回）、席の増減と済の引き継ぎ
 - 計算結果の identity はグループ名ではなく `groupID`
 - 広告: 資格判定・精算リセット・広告オフ期限。リワード目的（24h オフ / 保存枠）は分離。SDK 本体は叩かない
 - 永続化: 壊れた JSON は空扱い。Store は `UserDefaults(suiteName:)` でテストする
@@ -52,6 +52,14 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 
 - **前回の会計を復元（無料）**: 精算完了の直前と、バックグラウンド遷移時に、妥当な入力だけ 1 件保存する。起動はいつも初期画面。左上から任意で戻せる。総額空の初期状態では、既存の前回を消さない。
 - **メンバーセット**: グループ編成と端数単位を名前付きで保存する。総額は含めない。無料 1 件。動画を最後まで見ると枠が 1 つ増え、最大 3。適用しても今の総額は変わらない。広告オフ用の動画とは報酬が混ざらない。
+
+## 回収ボード
+シェアしたあとの PayPay 待ちを、頭と LINE ではなくアプリで持つ。**無料**。総額入力からメインの緑シェアまでのタップ数は増やさない。
+
+- **席**: グループ人数から自動展開する（例: 一般×4 → 一般 1…4）。個人名の手入力はしない。**21 人以上のグループは 1 行**で済/未済。
+- **位置**: メインの緑シェアの下、精算完了の上。総額空など妥当でない入力では出さない。
+- **未払いだけ再シェア**: 二次ボタン。済の席は文面に出さない。全員済では出せない。メインのシェア文面は変えない。
+- **保存**: 済/未済は前回会計に乗る。保存点は精算完了の直前とバックグラウンド。起動はいつも初期画面。
 
 ## スクリーンショット
 | 入力画面 | 計算結果とシェア |

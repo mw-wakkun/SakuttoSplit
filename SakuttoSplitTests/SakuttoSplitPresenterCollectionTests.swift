@@ -263,6 +263,23 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         XCTAssertEqual(presenter.collectionState.seats.count, 5)
     }
 
+    func testDidChangeGroupCount_To21_CollapsesStaffGroupToOneRow() {
+        let presenter = makeValidDefaultPresenter().presenter
+        let staffID = presenter.viewState.groups[1].id
+        presenter.didTapToggleCollectionSeat(id: CollectionSeatID(groupID: staffID, index: 0))
+
+        presenter.didChangeGroupCount(id: staffID, countText: "21")
+
+        let staffSeats = presenter.collectionState.seats.filter { $0.id.groupID == staffID }
+        XCTAssertEqual(staffSeats.count, 1)
+        XCTAssertEqual(staffSeats[0].label, "一般")
+        XCTAssertNil(staffSeats[0].displayNumber)
+        XCTAssertEqual(
+            presenter.viewState.shareText.components(separatedBy: "\n")[0],
+            "🍻 本日のお会計 🍻"
+        )
+    }
+
     func testUnpaidShareText_OmitsPaidSeats_DoesNotChangeMainShareText() {
         let presenter = makeValidDefaultPresenter().presenter
         let staffID = presenter.viewState.groups[1].id
