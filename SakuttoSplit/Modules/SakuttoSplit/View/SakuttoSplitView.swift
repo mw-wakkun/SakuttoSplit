@@ -7,194 +7,58 @@
 
 import SwiftUI
 
-/// 割り勘計算画面のメインView
+/// 割り勘計算画面。セクションの組み立てと Intent 転送だけを行う
 struct SakuttoSplitView: View {
 
     @ObservedObject var presenter: SakuttoSplitPresenter
     let bannerAdUnitID: String
+    @FocusState private var focusedField: SakuttoSplitFocus?
 
     var body: some View {
-        NavigationStack { // iOS 16以降の推奨
-            Form {
-                // MARK: お会計設定
-                Section("お会計設定") {
-                    totalAmountField
-                    roundingUnitPicker
-                }
-
-                // MARK: 参加者グループ
-                Section("参加者グループ") {
-                    groupsList
-                    addGroupButton
-                }
-
-                // MARK: 計算結果
-                Section("計算結果") {
-                    resultsList
-                    summarySection
-                    shareButton
-                }
-            }
-            .navigationTitle("サクッと割り勘")
-            .navigationBarTitleDisplayMode(.inline)
-            .scrollDismissesKeyboard(.immediately)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("完了") { hideKeyboard() }
-                }
-            }
-        }
-        // MARK: 広告バナー表示
-        AdBannerView(adUnitID: bannerAdUnitID)
-            .frame(height: 50)
-    }
-}
-
-// MARK: - View Components
-
-private extension SakuttoSplitView {
-
-    var totalAmountField: some View {
-        HStack {
-            TextField("例: 35000", text: totalAmountBinding)
-                .keyboardType(.numberPad)
-                .font(.title2)
-            Text("円")
-        }
-    }
-
-    var roundingUnitPicker: some View {
-        Picker("割り勘の単位", selection: roundingUnitBinding) {
-            ForEach(RoundingUnit.allCases, id: \.self) { unit in
-                Text(unit.displayName).tag(unit)
-            }
-        }
-    }
-
-    var groupsList: some View {
-        ForEach(presenter.viewState.groups) { group in
-            VStack(spacing: 12) {
-                // 上段：グループ名・人数・削除
-                HStack {
-                    TextField("グループ名", text: nameBinding(for: group.id))
-                        .textFieldStyle(.roundedBorder)
-
-                    stepperSection(for: group)
-
-                    deleteButton(for: group.id)
-                }
-
-                // 下段：モード切替・詳細入力
-                HStack {
-                    Picker("モード", selection: paymentModeBinding(for: group.id)) {
-                        Text("割合").tag(PaymentMode.ratio)
-                        Text("固定額").tag(PaymentMode.fixed)
+        VStack(spacing: 0) {
+            NavigationStack {
+                Form {
+                    Section("section.billing") {
+                        TotalAmountSection(text: totalAmountBinding, focusedField: $focusedField)
+                        RoundingUnitPicker(selection: roundingUnitBinding)
                     }
-                    .pickerStyle(.segmented)
 
-                    detailInputField(for: group)
+                    Section("section.groups") {
+                        GroupListSection(
+                            groups: presenter.viewState.groups,
+                            nameBinding: nameBinding,
+                            countBinding: countBinding,
+                            modeBinding: paymentModeBinding,
+                            fixedAmountBinding: fixedAmountBinding,
+                            ratioBinding: ratioBinding,
+                            focusedField: $focusedField,
+                            onAdd: { presenter.didTapAddGroup() },
+                            onRemove: { presenter.didTapRemoveGroup(id: $0) }
+                        )
+                    }
+
+                    Section("section.results") {
+                        CalculationResultSection(
+                            results: presenter.viewState.results,
+                            difference: presenter.viewState.difference,
+                            shareText: presenter.shareText()
+                        )
+                    }
+                }
+                .navigationTitle("app.title")
+                .navigationBarTitleDisplayMode(.inline)
+                .scrollDismissesKeyboard(.immediately)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("action.done") { focusedField = nil }
+                    }
                 }
             }
-            .padding(.vertical, 4)
+
+            AdBannerView(adUnitID: bannerAdUnitID)
+                .frame(height: 50)
         }
-    }
-
-    func stepperSection(for group: AttendeeGroupDraft) -> some View {
-        HStack(spacing: 8) {
-            let currentCount = Int(group.countText) ?? 1
-
-            Button(action: {
-                if currentCount > InputLimits.groupCountRange.lowerBound {
-                    presenter.didChangeGroupCount(id: group.id, countText: "\(currentCount - 1)")
-                }
-            }) {
-                Image(systemName: "minus.circle.fill").font(.title3)
-            }
-            .buttonStyle(.borderless)
-            .disabled(currentCount <= InputLimits.groupCountRange.lowerBound)
-
-            TextField("", text: countBinding(for: group.id))
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .frame(width: 35)
-
-            Button(action: {
-                if currentCount < InputLimits.groupCountRange.upperBound {
-                    presenter.didChangeGroupCount(id: group.id, countText: "\(currentCount + 1)")
-                }
-            }) {
-                Image(systemName: "plus.circle.fill").font(.title3)
-            }
-            .buttonStyle(.borderless)
-
-            Text("人")
-        }
-    }
-
-    func detailInputField(for group: AttendeeGroupDraft) -> some View {
-        HStack {
-            if group.mode == .fixed {
-                TextField("金額", text: fixedAmountBinding(for: group.id))
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(.roundedBorder)
-                Text("円")
-            } else {
-                TextField("倍率", text: ratioBinding(for: group.id))
-                    .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
-                Text("倍")
-            }
-        }
-    }
-
-    func deleteButton(for id: UUID) -> some View {
-        Button(role: .destructive) {
-            presenter.didTapRemoveGroup(id: id)
-        } label: {
-            Image(systemName: "trash").foregroundColor(.red)
-        }
-        .buttonStyle(.borderless)
-    }
-
-    var addGroupButton: some View {
-        Button(action: { presenter.didTapAddGroup() }) {
-            Label("グループを追加", systemImage: "plus.circle.fill")
-        }
-    }
-
-    var resultsList: some View {
-        ForEach(presenter.viewState.results) { result in
-            HStack {
-                Text(result.name)
-                Spacer()
-                VStack(alignment: .trailing) {
-                    Text("1人 \(result.amountPerPerson)円").bold()
-                    Text("(合計 \(result.total)円)").font(.caption).foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-
-    var summarySection: some View {
-        HStack {
-            Text(presenter.viewState.difference >= 0 ? "✨ 余剰金" : "⚠️ 不足金")
-            Spacer()
-            Text("\(abs(presenter.viewState.difference)) 円")
-                .bold()
-                .foregroundColor(presenter.viewState.difference >= 0 ? .green : .red)
-        }
-    }
-
-    var shareButton: some View {
-        ShareLink(item: presenter.shareText()) {
-            Label("結果をLINE等でシェア", systemImage: "message.fill")
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-        }
-        .listRowBackground(Color.green) // ボタンの背景を緑にする
     }
 }
 

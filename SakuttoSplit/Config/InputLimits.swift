@@ -42,7 +42,7 @@ enum InputLimits {
         return result
     }
 
-    private static func sanitizedDigitText(_ text: String, maxDigits: Int) -> String {
+    static func sanitizedDigitText(_ text: String, maxDigits: Int) -> String {
         String(text.filter(\.isNumber).prefix(maxDigits))
     }
 }
