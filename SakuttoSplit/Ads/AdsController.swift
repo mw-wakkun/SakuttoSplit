@@ -41,8 +41,6 @@ final class AdsController: ObservableObject, AdsControlling {
     convenience init(
         interstitialAdUnitID: String,
         rewardedAdUnitID: String = "",
-        store: AdFreeStore = AdFreeStore(),
-        adFreeDuration: TimeInterval = AdFreeStore.defaultDuration,
         now: @escaping () -> Date = Date.init,
         startDate: Date? = nil
     ) {
@@ -51,8 +49,8 @@ final class AdsController: ObservableObject, AdsControlling {
             rewardedAdUnitID: rewardedAdUnitID,
             loader: GoogleInterstitialLoader(),
             rewardedLoader: GoogleRewardedLoader(),
-            store: store,
-            adFreeDuration: adFreeDuration,
+            store: AdFreeStore(),
+            adFreeDuration: AdFreeStore.defaultDuration,
             now: now,
             startDate: startDate
         )
@@ -63,8 +61,8 @@ final class AdsController: ObservableObject, AdsControlling {
         rewardedAdUnitID: String = "",
         loader: any InterstitialAdHandling,
         rewardedLoader: any RewardedAdHandling,
-        store: AdFreeStore = AdFreeStore(),
-        adFreeDuration: TimeInterval = AdFreeStore.defaultDuration,
+        store: AdFreeStore,
+        adFreeDuration: TimeInterval,
         now: @escaping () -> Date = Date.init,
         startDate: Date? = nil
     ) {
