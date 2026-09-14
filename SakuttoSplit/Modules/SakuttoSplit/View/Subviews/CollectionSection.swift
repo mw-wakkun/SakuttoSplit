@@ -151,7 +151,15 @@ struct UnpaidShareButton: View {
         Section("section.collection") {
             CollectionSection(
                 seats: collectionPreviewSeats(paidIndexes: [1]),
-                unpaidShareText: "未払いのお願い",
+                unpaidShareText: """
+                未払いのお願い
+                総額  35,000円
+                ----------------
+                一般 1  1人 6,200円
+                一般 3  1人 6,200円
+                ----------------
+                PayPay等で送金をお願いします
+                """,
                 isUnpaidShareEnabled: true,
                 onToggle: { _ in },
                 onMarkGroupPaid: { _ in }

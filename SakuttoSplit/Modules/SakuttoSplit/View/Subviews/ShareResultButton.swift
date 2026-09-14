@@ -30,13 +30,31 @@ struct ShareResultButton: View, Equatable {
 #Preview("sticky enabled") {
     VStack(spacing: 0) {
         Spacer()
-        ShareResultButton(shareText: "本日のお会計", isEnabled: true)
+        ShareResultButton(
+            shareText: """
+            本日のお会計
+            総額  35,000円
+            ----------------
+            部長  1人 10,000円
+            一般  1人 6,200円
+            ----------------
+            不足  200円
+            PayPay等で送金をお願いします
+            """,
+            isEnabled: true
+        )
     }
 }
 
 #Preview("sticky disabled") {
     VStack(spacing: 0) {
         Spacer()
-        ShareResultButton(shareText: "本日のお会計", isEnabled: false)
+        ShareResultButton(
+            shareText: """
+            本日のお会計
+            総額  35,000円
+            """,
+            isEnabled: false
+        )
     }
 }
