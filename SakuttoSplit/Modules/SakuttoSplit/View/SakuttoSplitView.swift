@@ -13,6 +13,8 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @ObservedObject var presenter: Presenter
     let bannerAdUnitID: String
     let isAdsSDKReady: Bool
+    /// AdsController 未接続のフェーズ 1 では常に false
+    var isAdFree: Bool = false
     @FocusState private var focusedField: SakuttoSplitFocus?
 
     var body: some View {
@@ -69,12 +71,17 @@ private extension SakuttoSplitView {
 
     var adBannerSlot: some View {
         Group {
-            if isAdsSDKReady {
+            if AdBannerSlot.showsLoadedBanner(
+                isAdsSDKReady: isAdsSDKReady,
+                isFocused: focusedField != nil,
+                isAdFree: isAdFree
+            ) {
                 AdBannerView(adUnitID: bannerAdUnitID)
                     .equatable()
             }
         }
-        .frame(height: 50)
+        .frame(height: AdBannerSlot.height(isFocused: focusedField != nil, isAdFree: isAdFree))
+        .clipped()
     }
 }
 
