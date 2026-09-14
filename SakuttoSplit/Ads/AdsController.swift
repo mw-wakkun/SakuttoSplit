@@ -15,10 +15,16 @@ import UIKit
 final class AdsController: ObservableObject, AdsControlling {
 
     @Published private(set) var isAdFree: Bool
-    @Published private(set) var canRequestRewarded = false
+    @Published private(set) var canRequestRewarded: Bool
+    @Published private(set) var rewardUnavailable = false
+    @Published private(set) var adFreeRemaining: TimeInterval = 0
 
     private let interstitialAdUnitID: String
+    private let rewardedAdUnitID: String
     private let loader: any InterstitialAdHandling
+    private let rewardedLoader: any RewardedAdHandling
+    private let store: AdFreeStore
+    private let adFreeDuration: TimeInterval
     private let now: () -> Date
     private let startDate: Date
 
@@ -27,57 +33,89 @@ final class AdsController: ObservableObject, AdsControlling {
     private var hasPresentedInterstitialThisSession = false
     private var isLoadingInterstitial = false
 
+    private var readyRewarded: (any RewardedPresenting)?
+    private var presentingRewarded: (any RewardedPresenting)?
+    private var isLoadingRewarded = false
+    private var rewardUnavailableClearTask: Task<Void, Never>?
+
     convenience init(
         interstitialAdUnitID: String,
         rewardedAdUnitID: String = "",
+        store: AdFreeStore = AdFreeStore(),
+        adFreeDuration: TimeInterval = AdFreeStore.defaultDuration,
         now: @escaping () -> Date = Date.init,
-        startDate: Date? = nil,
-        isAdFree: Bool = false
+        startDate: Date? = nil
     ) {
         self.init(
             interstitialAdUnitID: interstitialAdUnitID,
             rewardedAdUnitID: rewardedAdUnitID,
             loader: GoogleInterstitialLoader(),
+            rewardedLoader: GoogleRewardedLoader(),
+            store: store,
+            adFreeDuration: adFreeDuration,
             now: now,
-            startDate: startDate,
-            isAdFree: isAdFree
+            startDate: startDate
         )
     }
 
     init(
         interstitialAdUnitID: String,
-        rewardedAdUnitID _: String = "",
+        rewardedAdUnitID: String = "",
         loader: any InterstitialAdHandling,
+        rewardedLoader: any RewardedAdHandling,
+        store: AdFreeStore = AdFreeStore(),
+        adFreeDuration: TimeInterval = AdFreeStore.defaultDuration,
         now: @escaping () -> Date = Date.init,
-        startDate: Date? = nil,
-        isAdFree: Bool = false
+        startDate: Date? = nil
     ) {
         self.interstitialAdUnitID = interstitialAdUnitID
+        self.rewardedAdUnitID = rewardedAdUnitID
         self.loader = loader
+        self.rewardedLoader = rewardedLoader
+        self.store = store
+        self.adFreeDuration = adFreeDuration
         self.now = now
         self.startDate = startDate ?? now()
-        self.isAdFree = isAdFree
+        let adFree = store.isAdFree(at: self.startDate)
+        self.isAdFree = adFree
+        self.canRequestRewarded = !adFree
+        self.adFreeRemaining = store.remaining(at: self.startDate)
+    }
+
+    func refreshAdFreeState() {
+        let wasAdFree = isAdFree
+        let current = now()
+        isAdFree = store.isAdFree(at: current)
+        adFreeRemaining = store.remaining(at: current)
+        canRequestRewarded = !isAdFree
+        if wasAdFree && !isAdFree {
+            Task { await startLoadingIfNeeded() }
+        }
     }
 
     func startLoadingIfNeeded() async {
-        guard !interstitialAdUnitID.isEmpty else { return }
-        guard readyInterstitial == nil, presentingInterstitial == nil else { return }
-        guard !isLoadingInterstitial else { return }
-
-        isLoadingInterstitial = true
-        let loaded = await loader.load(adUnitID: interstitialAdUnitID)
-        loaded?.onDidFinish = { [weak self] in
-            Task { await self?.interstitialDidFinish() }
-        }
-        readyInterstitial = loaded
-        isLoadingInterstitial = false
+        refreshAdFreeState()
+        guard !isAdFree else { return }
+        await loadInterstitialIfNeeded()
+        await loadRewardedIfNeeded()
     }
 
-    func didTapHideAdsForToday(from _: UIViewController) {
-        // フェーズ 4 でリワード視聴を実装する
+    func didTapHideAdsForToday(from rootViewController: UIViewController) {
+        refreshAdFreeState()
+        guard !isAdFree else { return }
+        guard presentingRewarded == nil else { return }
+        guard let ad = readyRewarded else {
+            showRewardUnavailable()
+            return
+        }
+
+        readyRewarded = nil
+        presentingRewarded = ad
+        ad.present(from: rootViewController)
     }
 
     func presentInterstitialIfEligible(from rootViewController: UIViewController) {
+        refreshAdFreeState()
         let eligibility = AdEligibility(
             isAdFree: isAdFree,
             hasPresentedInterstitialThisSession: hasPresentedInterstitialThisSession,
@@ -96,6 +134,61 @@ final class AdsController: ObservableObject, AdsControlling {
     func interstitialDidFinish() async {
         presentingInterstitial = nil
         await startLoadingIfNeeded()
+    }
+
+    func rewardedDidFinish() async {
+        presentingRewarded = nil
+        await startLoadingIfNeeded()
+    }
+
+    private func grantAdFree() {
+        let grantedAt = now()
+        store.grant(from: grantedAt, duration: adFreeDuration)
+        isAdFree = true
+        canRequestRewarded = false
+        adFreeRemaining = store.remaining(at: grantedAt)
+        rewardUnavailable = false
+    }
+
+    private func showRewardUnavailable() {
+        rewardUnavailable = true
+        rewardUnavailableClearTask?.cancel()
+        rewardUnavailableClearTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.rewardUnavailable = false
+        }
+    }
+
+    private func loadInterstitialIfNeeded() async {
+        guard !interstitialAdUnitID.isEmpty else { return }
+        guard readyInterstitial == nil, presentingInterstitial == nil else { return }
+        guard !isLoadingInterstitial else { return }
+
+        isLoadingInterstitial = true
+        let loaded = await loader.load(adUnitID: interstitialAdUnitID)
+        loaded?.onDidFinish = { [weak self] in
+            Task { await self?.interstitialDidFinish() }
+        }
+        readyInterstitial = loaded
+        isLoadingInterstitial = false
+    }
+
+    private func loadRewardedIfNeeded() async {
+        guard !rewardedAdUnitID.isEmpty else { return }
+        guard readyRewarded == nil, presentingRewarded == nil else { return }
+        guard !isLoadingRewarded else { return }
+
+        isLoadingRewarded = true
+        let loaded = await rewardedLoader.load(adUnitID: rewardedAdUnitID)
+        loaded?.onDidEarnReward = { [weak self] in
+            self?.grantAdFree()
+        }
+        loaded?.onDidFinish = { [weak self] in
+            Task { await self?.rewardedDidFinish() }
+        }
+        readyRewarded = loaded
+        isLoadingRewarded = false
     }
 }
 
@@ -124,6 +217,43 @@ private final class GoogleInterstitialAd: NSObject, InterstitialPresenting, Full
 
     func present(from rootViewController: UIViewController) {
         ad.present(from: rootViewController)
+    }
+
+    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
+        onDidFinish?()
+    }
+
+    func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
+        onDidFinish?()
+    }
+}
+
+private final class GoogleRewardedLoader: RewardedAdHandling {
+    func load(adUnitID: String) async -> (any RewardedPresenting)? {
+        do {
+            let ad = try await RewardedAd.load(with: adUnitID, request: Request())
+            return GoogleRewardedAd(ad: ad)
+        } catch {
+            return nil
+        }
+    }
+}
+
+private final class GoogleRewardedAd: NSObject, RewardedPresenting, FullScreenContentDelegate {
+    private let ad: RewardedAd
+    var onDidEarnReward: (() -> Void)?
+    var onDidFinish: (() -> Void)?
+
+    init(ad: RewardedAd) {
+        self.ad = ad
+        super.init()
+        ad.fullScreenContentDelegate = self
+    }
+
+    func present(from rootViewController: UIViewController) {
+        ad.present(from: rootViewController) { [weak self] in
+            self?.onDidEarnReward?()
+        }
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {

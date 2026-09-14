@@ -15,7 +15,9 @@ protocol AdsControlling: ObservableObject {
     var isAdFree: Bool { get }
     /// UI 用。未 load でもボタンは出してよい
     var canRequestRewarded: Bool { get }
+    var rewardUnavailable: Bool { get }
     func startLoadingIfNeeded() async
+    func refreshAdFreeState()
     func didTapHideAdsForToday(from rootViewController: UIViewController)
     func presentInterstitialIfEligible(from rootViewController: UIViewController)
 }
@@ -29,6 +31,20 @@ protocol InterstitialAdHandling: AnyObject {
 /// 読み込み済み全画面。GoogleMobileAds の型は出さない
 @MainActor
 protocol InterstitialPresenting: AnyObject {
+    var onDidFinish: (() -> Void)? { get set }
+    func present(from rootViewController: UIViewController)
+}
+
+/// SDK をテストから切り離すためのリワード読み込み
+@MainActor
+protocol RewardedAdHandling: AnyObject {
+    func load(adUnitID: String) async -> (any RewardedPresenting)?
+}
+
+/// 読み込み済みリワード。完了コールバックでのみ報酬を付ける
+@MainActor
+protocol RewardedPresenting: AnyObject {
+    var onDidEarnReward: (() -> Void)? { get set }
     var onDidFinish: (() -> Void)? { get set }
     func present(from rootViewController: UIViewController)
 }

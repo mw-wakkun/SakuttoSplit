@@ -15,6 +15,39 @@
         }
       }
     },
+    "ads.hide_for_today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動画を見て、今日の広告をオフ"
+          }
+        }
+      }
+    },
+    "ads.off_remaining %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "広告オフ中（残り%lld時間）"
+          }
+        }
+      }
+    },
+    "ads.reward_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "広告を読み込めませんでした"
+          }
+        }
+      }
+    },
     "app.title" : {
       "extractionState" : "manual",
       "localizations" : {

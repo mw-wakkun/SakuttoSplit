@@ -16,6 +16,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     let isAdsSDKReady: Bool
     @FocusState private var focusedField: SakuttoSplitFocus?
     @State private var rootViewControllerBox = RootViewControllerBox()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +55,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .scrollDismissesKeyboard(.immediately)
                 .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        hideAdsToolbarItem
+                    }
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
                         Button("action.done") { focusedField = nil }
@@ -67,6 +71,14 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             RootViewControllerProbe(box: rootViewControllerBox)
                 .frame(width: 0, height: 0)
         }
+        .onAppear {
+            adsController.refreshAdFreeState()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                adsController.refreshAdFreeState()
+            }
+        }
     }
 
     /// リセットしてから広告。Presenter は SDK を知らない
@@ -79,6 +91,31 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         }
         adsController.presentInterstitialIfEligible(from: rootViewController)
     }
+
+    private var hideAdsToolbarItem: some View {
+        Group {
+            if adsController.isAdFree {
+                Text("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
+            } else {
+                Button {
+                    hideAdsForToday()
+                } label: {
+                    Image(systemName: "video.slash")
+                }
+                .accessibilityLabel("ads.hide_for_today")
+            }
+        }
+    }
+
+    private func hideAdsForToday() {
+        guard let rootViewController = rootViewControllerBox.rootViewController else {
+            return
+        }
+        adsController.didTapHideAdsForToday(from: rootViewController)
+    }
 }
 
 // MARK: - Ad Banner
@@ -87,7 +124,12 @@ private extension SakuttoSplitView {
 
     var adBannerSlot: some View {
         Group {
-            if AdBannerSlot.showsLoadedBanner(
+            if adsController.rewardUnavailable {
+                Text("ads.reward_unavailable")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            } else if AdBannerSlot.showsLoadedBanner(
                 isAdsSDKReady: isAdsSDKReady,
                 isFocused: focusedField != nil,
                 isAdFree: adsController.isAdFree
@@ -96,8 +138,15 @@ private extension SakuttoSplitView {
                     .equatable()
             }
         }
-        .frame(height: AdBannerSlot.height(isFocused: focusedField != nil, isAdFree: adsController.isAdFree))
+        .frame(height: bannerSlotHeight)
         .clipped()
+    }
+
+    private var bannerSlotHeight: CGFloat {
+        if adsController.rewardUnavailable {
+            return AdBannerSlot.expandedHeight
+        }
+        return AdBannerSlot.height(isFocused: focusedField != nil, isAdFree: adsController.isAdFree)
     }
 }
 
