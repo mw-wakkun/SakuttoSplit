@@ -76,6 +76,42 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.lastInput?.groups[1].count, 999)
     }
 
+    /// 空・0・非数字は "1" に正規化し、計算入力の人数も 1
+    func testDidChangeGroupCount_EmptyZeroAndNonNumeric_BecomeOne() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let groupID = presenter.viewState.groups[1].id
+
+        presenter.didChangeGroupCount(id: groupID, countText: "")
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "1")
+        XCTAssertEqual(spy.lastInput?.groups[1].count, 1)
+
+        presenter.didChangeGroupCount(id: groupID, countText: "3")
+        presenter.didChangeGroupCount(id: groupID, countText: "0")
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "1")
+        XCTAssertEqual(spy.lastInput?.groups[1].count, 1)
+
+        presenter.didChangeGroupCount(id: groupID, countText: "3")
+        presenter.didChangeGroupCount(id: groupID, countText: "abc")
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "1")
+        XCTAssertEqual(spy.lastInput?.groups[1].count, 1)
+    }
+
+    /// "" → "1" のあと再び "" でも表示は "1" のままなので再計算しない
+    func testDidChangeGroupCount_EmptyAfterNormalizedToOne_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let groupID = presenter.viewState.groups[1].id
+
+        presenter.didChangeGroupCount(id: groupID, countText: "")
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "1")
+        let callsAfterNormalize = spy.calculateCallCount
+
+        presenter.didChangeGroupCount(id: groupID, countText: "")
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "1")
+        XCTAssertEqual(spy.calculateCallCount, callsAfterNormalize)
+    }
+
     func testDidChangePaymentMode_AndFixedAmount_EachCalculateOnce() {
         let spy = CalculatingSpyInteractor()
         let presenter = SakuttoSplitPresenter(interactor: spy)
@@ -144,19 +180,23 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         presenter.didChangeTotalAmount("35000")
 
-        let expected = """
-        🍻 本日のお会計 🍻
-        総額: 35000 円
-        ----------------
-        部長: 1人 10000円
-        一般: 1人 6200円
-        ----------------
-        ⚠️ 不足金: 200円
-        ※PayPay等で送金をお願いします！
-        """
+        let expected = Self.expectedShareTextForDefaultGroupsTotal35000
         XCTAssertEqual(presenter.shareText(), expected)
         XCTAssertNil(presenter.viewState.validationIssue)
         XCTAssertTrue(presenter.viewState.isShareEnabled)
+    }
+
+    /// シェア文は ViewState の正本。総額変更と同じ代入で更新される（メソッド依存をやめる準備）
+    func testViewState_ShareTextUpdatesWhenTotalAmountChanges() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+
+        presenter.didChangeTotalAmount("35000")
+
+        XCTAssertEqual(
+            presenter.viewState.shareText,
+            Self.expectedShareTextForDefaultGroupsTotal35000
+        )
+        XCTAssertEqual(presenter.shareText(), presenter.viewState.shareText)
     }
 
     func testViewState_UpdatesResultsInTheSameAssignmentAsInput() {
@@ -270,6 +310,17 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.results[1].amountPerPerson, 0)
         XCTAssertEqual(presenter.viewState.difference, 5000)
     }
+
+    private static let expectedShareTextForDefaultGroupsTotal35000 = """
+    🍻 本日のお会計 🍻
+    総額: 35000 円
+    ----------------
+    部長: 1人 10000円
+    一般: 1人 6200円
+    ----------------
+    ⚠️ 不足金: 200円
+    ※PayPay等で送金をお願いします！
+    """
 }
 
 private final class CalculatingSpyInteractor: SakuttoSplitInteractorProtocol {

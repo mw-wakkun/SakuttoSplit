@@ -15,11 +15,13 @@ final class InputLimitsTests: XCTestCase {
         XCTAssertEqual(InputLimits.sanitizedTotalAmountText(""), "")
     }
 
-    func testSanitizedCountText_AllowsEmptyAndClampsAt999() {
-        XCTAssertEqual(InputLimits.sanitizedCountText(""), "")
-        XCTAssertEqual(InputLimits.sanitizedCountText("0"), "0")
-        XCTAssertEqual(InputLimits.sanitizedCountText("12a3"), "123")
+    /// 人数の正本は 1...999。空・0・非数字は "1"、桁除去後にクランプする
+    func testSanitizedCountText_ClampsToOneThrough999() {
+        XCTAssertEqual(InputLimits.sanitizedCountText(""), "1")
+        XCTAssertEqual(InputLimits.sanitizedCountText("0"), "1")
+        XCTAssertEqual(InputLimits.sanitizedCountText("abc"), "1")
         XCTAssertEqual(InputLimits.sanitizedCountText("1000"), "999")
+        XCTAssertEqual(InputLimits.sanitizedCountText("12a3"), "123")
     }
 
     func testSanitizedRatioText_KeepsOneDot() {

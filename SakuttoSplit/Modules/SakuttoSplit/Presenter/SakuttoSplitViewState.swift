@@ -24,6 +24,7 @@ struct SakuttoSplitViewState: Equatable {
     var groups: [AttendeeGroupDraft]
     var results: [GroupCalculationResult]
     var difference: Int
+    var shareText: String = ""
     var validationIssue: SplitValidationIssue?
 
     var isShareEnabled: Bool { validationIssue == nil }
