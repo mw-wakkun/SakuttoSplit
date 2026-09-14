@@ -113,7 +113,7 @@ private extension SakuttoSplitView {
         }
     }
     
-    func stepperSection(for group: Binding<AttendeeGroup>) -> some View {
+    func stepperSection(for group: Binding<AttendeeGroupDraft>) -> some View {
         HStack(spacing: 8) {
             let currentCount = Int(group.wrappedValue.countText) ?? 1
             
@@ -146,7 +146,7 @@ private extension SakuttoSplitView {
         }
     }
     
-    func detailInputField(for group: Binding<AttendeeGroup>) -> some View {
+    func detailInputField(for group: Binding<AttendeeGroupDraft>) -> some View {
         HStack {
             if group.wrappedValue.isFixed {
                 TextField("金額", text: group.fixedAmountText)
@@ -180,7 +180,7 @@ private extension SakuttoSplitView {
     }
     
     var resultsList: some View {
-        ForEach(presenter.calculationResults, id: \.name) { result in
+        ForEach(presenter.calculationResults) { result in
             HStack {
                 Text(result.name)
                 Spacer()

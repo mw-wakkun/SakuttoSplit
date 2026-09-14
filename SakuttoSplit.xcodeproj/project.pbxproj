@@ -7,15 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7F14AF8A2FA5DF4D00FEBF1E /* SakuttoSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */; };
-		7F14AF8B2FA5DF4D00FEBF1E /* SakuttoSplitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */; };
-		7F14AF8C2FA5DF4D00FEBF1E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */; };
-		7F14AF982FA5ED1B00FEBF1E /* AttendeeGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF962FA5EC2100FEBF1E /* AttendeeGroup.swift */; };
-		7F14AF992FA5ED3400FEBF1E /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF972FA5EC7A00FEBF1E /* View+Extension.swift */; };
-		7F14AF9B2FA5EDBA00FEBF1E /* SakuttoSplitInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */; };
-		7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */; };
-		7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */; };
-		7F585B583029FC650011A6CB /* AdBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F585B573029FC650011A6CB /* AdBannerView.swift */; };
 		7FCB1D3330271BE900F74351 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 7FCB1D3230271BE900F74351 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
@@ -30,19 +21,19 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitView.swift; sourceTree = "<group>"; };
-		7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitApp.swift; sourceTree = "<group>"; };
-		7F14AF962FA5EC2100FEBF1E /* AttendeeGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendeeGroup.swift; sourceTree = "<group>"; };
-		7F14AF972FA5EC7A00FEBF1E /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
-		7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitInteractor.swift; sourceTree = "<group>"; };
-		7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitPresenter.swift; sourceTree = "<group>"; };
-		7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SakuttoSplitRouter.swift; sourceTree = "<group>"; };
 		7F14AFA42FA5F82F00FEBF1E /* SakuttoSplitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SakuttoSplitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7F585B573029FC650011A6CB /* AdBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBannerView.swift; sourceTree = "<group>"; };
-		7FCB1D04302718BE00F74351 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7FDD97CC2FA58CB10063A443 /* SakuttoSplit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SakuttoSplit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7F14AFB12FA5F87000FEBF1E /* Exceptions for "SakuttoSplit" folder in "SakuttoSplit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7FDD97CB2FA58CB10063A443 /* SakuttoSplit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */ = {
@@ -50,6 +41,14 @@
 			exceptions = (
 			);
 			path = SakuttoSplitTests;
+			sourceTree = "<group>";
+		};
+		7F14AFB02FA5F87000FEBF1E /* SakuttoSplit */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7F14AFB12FA5F87000FEBF1E /* Exceptions for "SakuttoSplit" folder in "SakuttoSplit" target */,
+			);
+			path = SakuttoSplit;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -73,103 +72,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		7F14AF8D2FA5E85800FEBF1E /* App */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF892FA5DF4D00FEBF1E /* SakuttoSplitApp.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		7F14AF8E2FA5EACE00FEBF1E /* Entity */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF962FA5EC2100FEBF1E /* AttendeeGroup.swift */,
-			);
-			path = Entity;
-			sourceTree = "<group>";
-		};
-		7F14AF8F2FA5EAE000FEBF1E /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF972FA5EC7A00FEBF1E /* View+Extension.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
-		7F14AF902FA5EAEB00FEBF1E /* Modules */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF912FA5EB4B00FEBF1E /* SakuttoSplit */,
-			);
-			path = Modules;
-			sourceTree = "<group>";
-		};
-		7F14AF912FA5EB4B00FEBF1E /* SakuttoSplit */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF932FA5EB5E00FEBF1E /* Interactor */,
-				7F14AF952FA5EB6E00FEBF1E /* Router */,
-				7F14AF942FA5EB6700FEBF1E /* Presenter */,
-				7F14AF922FA5EB5700FEBF1E /* View */,
-			);
-			path = SakuttoSplit;
-			sourceTree = "<group>";
-		};
-		7F14AF922FA5EB5700FEBF1E /* View */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF882FA5DF4D00FEBF1E /* SakuttoSplitView.swift */,
-			);
-			path = View;
-			sourceTree = "<group>";
-		};
-		7F14AF932FA5EB5E00FEBF1E /* Interactor */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF9A2FA5EDB700FEBF1E /* SakuttoSplitInteractor.swift */,
-			);
-			path = Interactor;
-			sourceTree = "<group>";
-		};
-		7F14AF942FA5EB6700FEBF1E /* Presenter */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF9C2FA5EE1700FEBF1E /* SakuttoSplitPresenter.swift */,
-			);
-			path = Presenter;
-			sourceTree = "<group>";
-		};
-		7F14AF952FA5EB6E00FEBF1E /* Router */ = {
-			isa = PBXGroup;
-			children = (
-				7F14AF9E2FA5EF8600FEBF1E /* SakuttoSplitRouter.swift */,
-			);
-			path = Router;
-			sourceTree = "<group>";
-		};
-		7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */ = {
-			isa = PBXGroup;
-			children = (
-				7FCB1D04302718BE00F74351 /* Info.plist */,
-				7F14AF8D2FA5E85800FEBF1E /* App */,
-				7F14AF902FA5EAEB00FEBF1E /* Modules */,
-				7F14AF8F2FA5EAE000FEBF1E /* Extensions */,
-				7F14AF8E2FA5EACE00FEBF1E /* Entity */,
-				7F585B563029FC3C0011A6CB /* Components */,
-				7F14AF872FA5DF4D00FEBF1E /* Assets.xcassets */,
-			);
-			path = SakuttoSplit;
-			sourceTree = "<group>";
-		};
-		7F585B563029FC3C0011A6CB /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				7F585B573029FC650011A6CB /* AdBannerView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
 		7FCB1D3130271BE900F74351 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -180,7 +82,7 @@
 		7FDD97C32FA58CB10063A443 = {
 			isa = PBXGroup;
 			children = (
-				7F14AFAD2FA5F86600FEBF1E /* SakuttoSplit */,
+				7F14AFB02FA5F87000FEBF1E /* SakuttoSplit */,
 				7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */,
 				7FCB1D3130271BE900F74351 /* Frameworks */,
 				7FDD97CD2FA58CB10063A443 /* Products */,
@@ -231,6 +133,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7F14AFB02FA5F87000FEBF1E /* SakuttoSplit */,
 			);
 			name = SakuttoSplit;
 			packageProductDependencies = (
@@ -294,7 +199,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F14AF8C2FA5DF4D00FEBF1E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,14 +216,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F14AF8A2FA5DF4D00FEBF1E /* SakuttoSplitView.swift in Sources */,
-				7F14AF982FA5ED1B00FEBF1E /* AttendeeGroup.swift in Sources */,
-				7F14AF992FA5ED3400FEBF1E /* View+Extension.swift in Sources */,
-				7F585B583029FC650011A6CB /* AdBannerView.swift in Sources */,
-				7F14AF9F2FA5EF8800FEBF1E /* SakuttoSplitRouter.swift in Sources */,
-				7F14AF8B2FA5DF4D00FEBF1E /* SakuttoSplitApp.swift in Sources */,
-				7F14AF9D2FA5EE2000FEBF1E /* SakuttoSplitPresenter.swift in Sources */,
-				7F14AF9B2FA5EDBA00FEBF1E /* SakuttoSplitInteractor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
