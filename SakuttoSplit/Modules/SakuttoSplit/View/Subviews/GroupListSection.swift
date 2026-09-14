@@ -46,8 +46,8 @@ struct GroupListSection: View {
 
 private struct GroupListSectionPreview: View {
     @State private var groups = [
-        AttendeeGroupDraft(name: "部長", countText: "1", isFixed: true, fixedAmountText: "10000"),
-        AttendeeGroupDraft(name: "一般", countText: "4", isFixed: false, ratioText: "1.0")
+        AttendeeGroupDraft(name: "部長", countText: "1", mode: .fixed, fixedAmountText: "10000"),
+        AttendeeGroupDraft(name: "一般", countText: "4", mode: .ratio, ratioText: "1.0")
     ]
     @FocusState private var focusedField: SakuttoSplitFocus?
 

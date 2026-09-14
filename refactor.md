@@ -227,7 +227,7 @@ init(
 - [x] フェーズ 0
 - [x] フェーズ 1
 - [x] フェーズ 2
-- [ ] フェーズ 3
+- [x] フェーズ 3
 - [ ] フェーズ 4
 
 ### フェーズ 0: 安全網（テストを先に固定 / 更新）
@@ -503,3 +503,9 @@ Binding とクロージャの混在について:
 - `CalculationResultSection` は `isShareEnabled` 引数をやめ、`validationIssue == nil` からシェア可否を導出
 - Router テストで assemble 後の presenter をジェネリック View に渡し、型推論できることを固定
 - Binding アダプタとグループ行クロージャの使い分けは意図どおり残し、README に 1 行追記
+
+### フェーズ 3（Draft から Bool モードを除去）
+
+- `AttendeeGroupDraft.isFixed` を削除し、`init` は `mode: PaymentMode = .ratio` を正本にした
+- 初期グループ・新規グループ・Preview・テストの `isFixed:` を `mode: .fixed` / `mode: .ratio` に置換
+- Presenter 初期状態の部長 = 固定、一般 = 割合をテストで固定。計算期待値は変更していない

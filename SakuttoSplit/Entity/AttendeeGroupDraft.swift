@@ -16,24 +16,18 @@ struct AttendeeGroupDraft: Identifiable, Equatable {
     var fixedAmountText: String
     var ratioText: String
 
-    /// View の既存セグメント（割合 / 固定額）との互換
-    var isFixed: Bool {
-        get { mode == .fixed }
-        set { mode = newValue ? .fixed : .ratio }
-    }
-
     init(
         id: UUID = UUID(),
         name: String,
         countText: String = "1",
-        isFixed: Bool = false,
+        mode: PaymentMode = .ratio,
         fixedAmountText: String = "0",
         ratioText: String = "1.0"
     ) {
         self.id = id
         self.name = name
         self.countText = countText
-        self.mode = isFixed ? .fixed : .ratio
+        self.mode = mode
         self.fixedAmountText = fixedAmountText
         self.ratioText = ratioText
     }

@@ -16,7 +16,7 @@ final class AttendeeGroupDraftTests: XCTestCase {
             id: id,
             name: "部長",
             countText: "2",
-            isFixed: true,
+            mode: .fixed,
             fixedAmountText: "10000",
             ratioText: "1.5"
         )
@@ -35,7 +35,7 @@ final class AttendeeGroupDraftTests: XCTestCase {
         let draft = AttendeeGroupDraft(
             name: "一般",
             countText: "abc",
-            isFixed: false,
+            mode: .ratio,
             fixedAmountText: "xyz",
             ratioText: "1.0"
         )

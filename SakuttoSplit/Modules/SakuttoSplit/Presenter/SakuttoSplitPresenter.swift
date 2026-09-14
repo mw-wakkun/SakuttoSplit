@@ -77,7 +77,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         applyUpdate { state in
             let newGroupName = "新規グループ\(state.groups.count + 1)"
             state.groups.append(
-                AttendeeGroupDraft(name: newGroupName, countText: "1", isFixed: false, ratioText: "1.0")
+                AttendeeGroupDraft(name: newGroupName, countText: "1", mode: .ratio, ratioText: "1.0")
             )
         }
     }

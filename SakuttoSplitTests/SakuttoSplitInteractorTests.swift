@@ -151,7 +151,7 @@ final class SakuttoSplitInteractorTests: XCTestCase {
 
     func testCalculateBill_RatioGroupsOnly_EmptyRatioText() {
         let groups = [
-            AttendeeGroupDraft(name: "全員", countText: "4", isFixed: false, ratioText: "").toDomain()
+            AttendeeGroupDraft(name: "全員", countText: "4", mode: .ratio, ratioText: "").toDomain()
         ]
 
         let result = calculate(totalAmount: 20000, roundingUnit: .hundred, groups: groups)
@@ -233,7 +233,7 @@ final class SakuttoSplitInteractorTests: XCTestCase {
 
     func testCalculateBill_InvalidCountText_IsTreatedAsZero() {
         let groups = [
-            AttendeeGroupDraft(name: "全員", countText: "abc", isFixed: false, ratioText: "1.0").toDomain()
+            AttendeeGroupDraft(name: "全員", countText: "abc", mode: .ratio, ratioText: "1.0").toDomain()
         ]
 
         let result = calculate(totalAmount: 20000, roundingUnit: .hundred, groups: groups)

@@ -112,7 +112,7 @@ private struct GroupRowViewPreview: View {
     @State private var group = AttendeeGroupDraft(
         name: "部長",
         countText: "1",
-        isFixed: true,
+        mode: .fixed,
         fixedAmountText: "10000"
     )
     @FocusState private var focusedField: SakuttoSplitFocus?
