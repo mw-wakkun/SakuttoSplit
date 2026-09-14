@@ -68,6 +68,7 @@ final class AdBannerContainerView: UIView {
         ])
     }
 
+    /// SDK の `start` 完了後に View が載ることだけを前提にする。Container は SDK 状態を持たない
     private func loadAdIfNeeded() {
         guard !didLoadAd, let window, let rootViewController = window.rootViewController else {
             return

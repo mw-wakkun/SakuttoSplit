@@ -225,7 +225,7 @@ init(
 進捗:
 
 - [x] フェーズ 0
-- [ ] フェーズ 1
+- [x] フェーズ 1
 - [ ] フェーズ 2
 - [ ] フェーズ 3
 - [ ] フェーズ 4
@@ -484,3 +484,13 @@ Binding とクロージャの混在について:
 - Router に「presenter と空でない bannerAdUnitID」を返す契約のテストを追加（戻り値の型変更はフェーズ 1）
 - Interactor テストは未変更
 - `SakuttoSplitViewState.shareText` はテストが新 API を参照できるよう空文字のプレースホルダのみ追加。生成の配線はフェーズ 1
+
+### フェーズ 1（寿命・広告・人数・シェア無効化）
+
+- Router を `enum` にし、`assembleModule` は `SakuttoSplitModule`（presenter + bannerAdUnitID）を返す。`AdConfigurationProviding` をデフォルト付きで注入
+- App は `@State` の View 所有をやめ、`init` で `assembleModule()` し Presenter を `@StateObject` で所有。`body` では組み立てない
+- `MobileAds.shared.start()` 完了後にだけ `AdBannerView` を載せる。未 ready 時は高さ 50 のプレースホルダを残す。Container に SDK 状態は持たせない
+- `InputLimits.sanitizedCountText` を 1...999 にクランプ（空・非数字・0 → `"1"`）。Draft の `?? 0` はドメイン防御として残置
+- シェア文は `applyCalculation` 内で `viewState.shareText` に代入。View はメソッドではなく ViewState を渡す。`shareText()` は薄ラッパとして残し、契約削除はフェーズ 2
+- `ShareResultButton` は `.disabled`（＋無効時 opacity）。`allowsHitTesting` だけには依存しない
+- Router テストを Module DTO / Ad 注入前提に更新。シェア文更新で計算が増えないことを Presenter の spy で固定

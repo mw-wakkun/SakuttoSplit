@@ -12,6 +12,7 @@ struct SakuttoSplitView: View {
 
     @ObservedObject var presenter: SakuttoSplitPresenter
     let bannerAdUnitID: String
+    let isAdsSDKReady: Bool
     @FocusState private var focusedField: SakuttoSplitFocus?
 
     var body: some View {
@@ -41,7 +42,7 @@ struct SakuttoSplitView: View {
                         CalculationResultSection(
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
-                            shareText: presenter.shareText(),
+                            shareText: presenter.viewState.shareText,
                             validationIssue: presenter.viewState.validationIssue,
                             isShareEnabled: presenter.viewState.isShareEnabled
                         )
@@ -58,10 +59,23 @@ struct SakuttoSplitView: View {
                 }
             }
 
-            AdBannerView(adUnitID: bannerAdUnitID)
-                .equatable()
-                .frame(height: 50)
+            adBannerSlot
         }
+    }
+}
+
+// MARK: - Ad Banner
+
+private extension SakuttoSplitView {
+
+    var adBannerSlot: some View {
+        Group {
+            if isAdsSDKReady {
+                AdBannerView(adUnitID: bannerAdUnitID)
+                    .equatable()
+            }
+        }
+        .frame(height: 50)
     }
 }
 

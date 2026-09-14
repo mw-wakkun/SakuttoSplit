@@ -89,7 +89,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresentable {
     }
 
     func shareText() -> String {
-        ShareTextBuilder.build(from: viewState)
+        viewState.shareText
     }
 
     /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える
@@ -114,6 +114,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresentable {
             totalAmountText: state.totalAmountText,
             input: input
         )
+        state.shareText = ShareTextBuilder.build(from: state)
     }
 
     private static func makeInput(from state: SakuttoSplitViewState) -> BillCalculationInput {

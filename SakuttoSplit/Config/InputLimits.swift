@@ -22,10 +22,14 @@ enum InputLimits {
 
     static func sanitizedCountText(_ text: String) -> String {
         let digits = text.filter(\.isNumber)
-        guard let value = Int(digits), value > groupCountRange.upperBound else {
-            return String(digits)
+        guard !digits.isEmpty else {
+            return String(groupCountRange.lowerBound)
         }
-        return String(groupCountRange.upperBound)
+        guard let value = Int(digits) else {
+            return String(groupCountRange.upperBound)
+        }
+        let clamped = min(max(value, groupCountRange.lowerBound), groupCountRange.upperBound)
+        return String(clamped)
     }
 
     static func sanitizedRatioText(_ text: String) -> String {

@@ -7,7 +7,6 @@
 
 import Combine
 import Foundation
-import SwiftUI
 
 /// View が描画する状態と、ユーザー操作の Intent を公開する
 @MainActor
@@ -33,7 +32,7 @@ protocol SakuttoSplitInteractorProtocol {
 /// モジュール組み立て。戻り値は型消去しない
 @MainActor
 protocol SakuttoSplitRouterProtocol {
-    static func assembleModule() -> SakuttoSplitView
+    static func assembleModule() -> SakuttoSplitModule
 }
 
 /// 広告ユニット ID の供給

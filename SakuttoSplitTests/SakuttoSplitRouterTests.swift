@@ -11,21 +11,23 @@ import XCTest
 @MainActor
 final class SakuttoSplitRouterTests: XCTestCase {
 
-    func testAssembleModule_ReturnsConcreteViewHoldingPresenter() {
-        let view = SakuttoSplitRouter.assembleModule()
-
-        XCTAssertEqual(view.presenter.viewState.groups.count, 2)
-        XCTAssertEqual(view.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
-        XCTAssertFalse(view.bannerAdUnitID.isEmpty)
-    }
-
-    /// 新仕様: 組み立て結果は View ではなく presenter と空でない bannerAdUnitID
     func testAssembleModule_ReturnsPresenterAndNonEmptyBannerAdUnitID() {
         let module = SakuttoSplitRouter.assembleModule()
 
-        XCTAssertFalse(module as Any is SakuttoSplitView)
         XCTAssertEqual(module.presenter.viewState.groups.count, 2)
         XCTAssertFalse(module.bannerAdUnitID.isEmpty)
         XCTAssertEqual(module.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
     }
+
+    func testAssembleModule_UsesInjectedAdConfiguration() {
+        let module = SakuttoSplitRouter.assembleModule(
+            adConfiguration: StubAdConfiguration(bannerAdUnitID: "ca-app-pub-test/injected")
+        )
+
+        XCTAssertEqual(module.bannerAdUnitID, "ca-app-pub-test/injected")
+    }
+}
+
+private struct StubAdConfiguration: AdConfigurationProviding {
+    let bannerAdUnitID: String
 }

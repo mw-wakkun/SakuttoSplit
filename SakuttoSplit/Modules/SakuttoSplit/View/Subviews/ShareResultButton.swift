@@ -20,7 +20,8 @@ struct ShareResultButton: View, Equatable {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
         }
-        .allowsHitTesting(isEnabled)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.45)
         .listRowBackground(Color.green)
     }
 }

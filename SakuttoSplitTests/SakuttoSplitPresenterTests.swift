@@ -181,17 +181,21 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         presenter.didChangeTotalAmount("35000")
 
         let expected = Self.expectedShareTextForDefaultGroupsTotal35000
+        XCTAssertEqual(presenter.viewState.shareText, expected)
         XCTAssertEqual(presenter.shareText(), expected)
         XCTAssertNil(presenter.viewState.validationIssue)
         XCTAssertTrue(presenter.viewState.isShareEnabled)
     }
 
-    /// シェア文は ViewState の正本。総額変更と同じ代入で更新される（メソッド依存をやめる準備）
+    /// シェア文は ViewState の正本。総額変更と同じ代入で更新され、計算は増えない
     func testViewState_ShareTextUpdatesWhenTotalAmountChanges() {
-        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let callsAfterInit = spy.calculateCallCount
 
         presenter.didChangeTotalAmount("35000")
 
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit + 1)
         XCTAssertEqual(
             presenter.viewState.shareText,
             Self.expectedShareTextForDefaultGroupsTotal35000

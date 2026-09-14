@@ -8,17 +8,30 @@
 import SwiftUI
 import GoogleMobileAds
 
-/// アプリのエントリポイント。組み立て済みモジュールを安定所有する
+/// アプリのエントリポイント。Presenter を `@StateObject` で所有する
 @main
 struct SakuttoSplitApp: App {
-    @State private var splitView = SakuttoSplitRouter.assembleModule()
+    @StateObject private var presenter: SakuttoSplitPresenter
+    private let bannerAdUnitID: String
+    @State private var isAdsSDKReady = false
+
+    init() {
+        let module = SakuttoSplitRouter.assembleModule()
+        _presenter = StateObject(wrappedValue: module.presenter)
+        bannerAdUnitID = module.bannerAdUnitID
+    }
 
     var body: some Scene {
         WindowGroup {
-            splitView
-                .task {
-                    await MobileAds.shared.start()
-                }
+            SakuttoSplitView(
+                presenter: presenter,
+                bannerAdUnitID: bannerAdUnitID,
+                isAdsSDKReady: isAdsSDKReady
+            )
+            .task {
+                await MobileAds.shared.start()
+                isAdsSDKReady = true
+            }
         }
     }
 }
