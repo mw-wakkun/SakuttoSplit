@@ -6,57 +6,118 @@
 //
 
 import SwiftUI
+import UIKit
 
-/// 回収ボード。メインの sticky シェアとは別セクション。資格判定は Presenter が渡す
+/// 回収ボードの中身。`Section` は親の Form が開く。資格判定は Presenter が渡す
 struct CollectionSection: View {
     let seats: [CollectionSeat]
     let unpaidShareText: String
     let isUnpaidShareEnabled: Bool
     var onToggle: (CollectionSeatID) -> Void
+    var onMarkGroupPaid: (UUID) -> Void
 
     private var unpaidCount: Int {
         seats.filter { !$0.isPaid }.count
     }
 
+    private var paidFraction: Double {
+        guard !seats.isEmpty else { return 0 }
+        return Double(seats.count - unpaidCount) / Double(seats.count)
+    }
+
     var body: some View {
-        Section("section.collection") {
-            ForEach(seats) { seat in
-                CollectionSeatRow(seat: seat, onToggle: onToggle)
+        ForEach(seatGroups) { group in
+            ForEach(group.seats) { seat in
+                CollectionSeatRow(seat: seat) {
+                    toggleSeat(seat)
+                }
             }
 
-            progressRow
-
-            UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
+            if group.seats.count >= 2 {
+                Button("collection.mark_group_paid") {
+                    markGroupPaid(group.groupID)
+                }
+            }
         }
+
+        progressRow
+
+        UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
     }
 
     @ViewBuilder
     private var progressRow: some View {
-        if unpaidCount == 0 {
-            Text("collection.all_paid")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        } else {
-            Text("collection.progress \(unpaidCount) \(seats.count)")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            ProgressView(value: paidFraction)
+            if unpaidCount == 0 {
+                Text("collection.all_paid")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("collection.progress \(unpaidCount) \(seats.count)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
+
+    private var seatGroups: [SeatGroup] {
+        var order: [UUID] = []
+        var grouped: [UUID: [CollectionSeat]] = [:]
+        for seat in seats {
+            if grouped[seat.id.groupID] == nil {
+                order.append(seat.id.groupID)
+            }
+            grouped[seat.id.groupID, default: []].append(seat)
+        }
+        return order.map { SeatGroup(groupID: $0, seats: grouped[$0] ?? []) }
+    }
+
+    private func toggleSeat(_ seat: CollectionSeat) {
+        let groupSeats = seats.filter { $0.id.groupID == seat.id.groupID }
+        let unpaidInGroup = groupSeats.filter { !$0.isPaid }
+        let willCompleteGroup = !seat.isPaid && unpaidInGroup.count == 1
+        onToggle(seat.id)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if willCompleteGroup {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+
+    private func markGroupPaid(_ groupID: UUID) {
+        let groupSeats = seats.filter { $0.id.groupID == groupID }
+        let hadUnpaid = groupSeats.contains { !$0.isPaid }
+        onMarkGroupPaid(groupID)
+        if hadUnpaid {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+}
+
+private struct SeatGroup: Identifiable {
+    var id: UUID { groupID }
+    let groupID: UUID
+    let seats: [CollectionSeat]
 }
 
 /// 席 1 行。チェック・ラベル・1 人あたり金額
 private struct CollectionSeatRow: View {
     let seat: CollectionSeat
-    var onToggle: (CollectionSeatID) -> Void
+    var onToggle: () -> Void
 
     var body: some View {
-        Toggle(isOn: toggleBinding) {
+        Button(action: onToggle) {
             HStack {
+                Image(systemName: seat.isPaid ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(seat.isPaid ? Color.accentColor : Color.secondary)
+                    .imageScale(.large)
                 seatLabel
                 Spacer()
-                Text("result.per_person \(seat.amountPerPerson)")
+                Text("result.per_person \(YenFormatting.grouped(seat.amountPerPerson))")
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(seat.isPaid ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -67,20 +128,9 @@ private struct CollectionSeatRow: View {
             Text(seat.groupName)
         }
     }
-
-    private var toggleBinding: Binding<Bool> {
-        Binding(
-            get: { seat.isPaid },
-            set: { newValue in
-                if newValue != seat.isPaid {
-                    onToggle(seat.id)
-                }
-            }
-        )
-    }
 }
 
-/// 未払い再シェア。緑背景にしない。ShareResultButton には相乗りしない
+/// 未払い再シェア。メイン sticky の accent 全幅にはしない
 struct UnpaidShareButton: View {
     let shareText: String
     let isEnabled: Bool
@@ -96,25 +146,31 @@ struct UnpaidShareButton: View {
     }
 }
 
-#Preview("few seats") {
+#Preview("checks") {
     Form {
-        CollectionSection(
-            seats: collectionPreviewSeats(paidIndexes: [1]),
-            unpaidShareText: "🍻 未払いのお願い 🍻",
-            isUnpaidShareEnabled: true,
-            onToggle: { _ in }
-        )
+        Section("section.collection") {
+            CollectionSection(
+                seats: collectionPreviewSeats(paidIndexes: [1]),
+                unpaidShareText: "未払いのお願い",
+                isUnpaidShareEnabled: true,
+                onToggle: { _ in },
+                onMarkGroupPaid: { _ in }
+            )
+        }
     }
 }
 
 #Preview("all paid") {
     Form {
-        CollectionSection(
-            seats: collectionPreviewSeats(paidIndexes: [0, 1, 2]),
-            unpaidShareText: "",
-            isUnpaidShareEnabled: false,
-            onToggle: { _ in }
-        )
+        Section("section.collection") {
+            CollectionSection(
+                seats: collectionPreviewSeats(paidIndexes: [0, 1, 2]),
+                unpaidShareText: "",
+                isUnpaidShareEnabled: false,
+                onToggle: { _ in },
+                onMarkGroupPaid: { _ in }
+            )
+        }
     }
 }
 

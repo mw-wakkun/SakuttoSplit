@@ -23,6 +23,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @State private var isSlotFullPresented = false
     @State private var memberSetNameDraft = ""
     @State private var expandedPaymentGroupIDs: Set<UUID> = []
+    @State private var isSettleConfirmPresented = false
     @State private var isMemberSetUndoBannerPresented = false
     @State private var memberSetUndoBannerHideTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
@@ -64,14 +65,27 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                         CalculationResultSection(
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
-                            validationIssue: presenter.viewState.validationIssue,
-                            collectionSeats: presenter.collectionState.seats,
-                            unpaidShareText: presenter.unpaidShareText,
-                            isUnpaidShareEnabled: presenter.isUnpaidShareEnabled,
-                            onToggleCollectionSeat: { presenter.didTapToggleCollectionSeat(id: $0) },
-                            onSettleComplete: settleComplete
+                            validationIssue: presenter.viewState.validationIssue
                         )
                     }
+
+                    if presenter.viewState.validationIssue == nil,
+                       !presenter.collectionState.seats.isEmpty {
+                        Section("section.collection") {
+                            CollectionSection(
+                                seats: presenter.collectionState.seats,
+                                unpaidShareText: presenter.unpaidShareText,
+                                isUnpaidShareEnabled: presenter.isUnpaidShareEnabled,
+                                onToggle: { presenter.didTapToggleCollectionSeat(id: $0) },
+                                onMarkGroupPaid: { presenter.didTapMarkGroupCollectionPaid(groupID: $0) }
+                            )
+                        }
+                    }
+
+                    SettleCompleteButton(
+                        validationIssue: presenter.viewState.validationIssue,
+                        action: requestSettleConfirmation
+                    )
                 }
                 .navigationTitle("app.title")
                 .navigationBarTitleDisplayMode(.inline)
@@ -162,16 +176,30 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 onClose: { presenter.didTapCloseMemberSetSheet() }
             )
         }
+        .confirmationDialog(
+            "settle.confirm_title",
+            isPresented: $isSettleConfirmPresented,
+            titleVisibility: .visible
+        ) {
+            Button("settle.complete", action: settleComplete)
+            Button(role: .cancel) {}
+        } message: {
+            Text("settle.confirm_message")
+        }
     }
 
-    /// リセットしてから広告。成功時は総額へ戻す。Presenter は SDK を知らない
+    /// 精算は確認後にだけ実行する。キャンセルでは Presenter も広告も呼ばない
+    private func requestSettleConfirmation() {
+        guard presenter.viewState.validationIssue == nil else { return }
+        isSettleConfirmPresented = true
+    }
+
+    /// 確認後にだけリセットと広告。Presenter は SDK を知らない
     private func settleComplete() {
+        focusedField = nil
         let canSettle = presenter.viewState.validationIssue == nil
         presenter.didTapSettleComplete()
-        guard canSettle else {
-            focusedField = nil
-            return
-        }
+        guard canSettle else { return }
         Task { @MainActor in
             focusTotalAmountIfNeeded()
         }

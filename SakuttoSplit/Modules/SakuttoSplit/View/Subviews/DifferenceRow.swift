@@ -15,7 +15,7 @@ struct DifferenceRow: View, Equatable {
         HStack {
             Text(difference >= 0 ? "difference.surplus" : "difference.shortage")
             Spacer()
-            Text("difference.amount \(abs(difference))")
+            Text("difference.amount \(YenFormatting.grouped(abs(difference)))")
                 .bold()
                 .foregroundStyle(difference >= 0 ? .green : .red)
         }

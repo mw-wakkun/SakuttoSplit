@@ -81,6 +81,17 @@
         }
       }
     },
+    "collection.mark_group_paid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全員済"
+          }
+        }
+      }
+    },
     "collection.progress %lld %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -114,13 +125,13 @@
         }
       }
     },
-    "difference.amount %lld" : {
+    "difference.amount %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld 円"
+            "value" : "%@ 円"
           }
         }
       }
@@ -246,24 +257,24 @@
         }
       }
     },
-    "result.group_total %lld" : {
+    "result.group_total %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "(合計 %lld円)"
+            "value" : "(合計 %@円)"
           }
         }
       }
     },
-    "result.per_person %lld" : {
+    "result.per_person %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1人 %lld円"
+            "value" : "1人 %@円"
           }
         }
       }
@@ -539,6 +550,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取り消す"
+          }
+        }
+      }
+    },
+    "settle.confirm_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今夜の内容は前回の会計として残し、入力を初期状態に戻します。"
+          }
+        }
+      }
+    },
+    "settle.confirm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の会計に進みますか？"
           }
         }
       }

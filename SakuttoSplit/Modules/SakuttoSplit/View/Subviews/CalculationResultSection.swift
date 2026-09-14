@@ -7,16 +7,11 @@
 
 import SwiftUI
 
-/// 計算結果の値だけを受ける。メインシェアは親の sticky に置く
+/// 計算結果の値だけを受ける。回収と精算は親 Form の兄弟として置く
 struct CalculationResultSection: View {
     let results: [GroupCalculationResult]
     let difference: Int
     let validationIssue: SakuttoSplitValidationIssue?
-    var collectionSeats: [CollectionSeat] = []
-    var unpaidShareText: String = ""
-    var isUnpaidShareEnabled: Bool = false
-    var onToggleCollectionSeat: (CollectionSeatID) -> Void = { _ in }
-    var onSettleComplete: () -> Void
 
     var body: some View {
         ForEach(results) { result in
@@ -32,21 +27,10 @@ struct CalculationResultSection: View {
                 .font(.footnote)
                 .foregroundStyle(.red)
         }
-
-        if !collectionSeats.isEmpty {
-            CollectionSection(
-                seats: collectionSeats,
-                unpaidShareText: unpaidShareText,
-                isUnpaidShareEnabled: isUnpaidShareEnabled,
-                onToggle: onToggleCollectionSeat
-            )
-        }
-
-        SettleCompleteButton(validationIssue: validationIssue, action: onSettleComplete)
     }
 }
 
-/// グループ単位の計算結果行
+/// グループ単位の計算結果行。金額は表示用 Formatter
 struct ResultRow: View, Equatable {
     let result: GroupCalculationResult
 
@@ -55,8 +39,10 @@ struct ResultRow: View, Equatable {
             Text(result.name)
             Spacer()
             VStack(alignment: .trailing) {
-                Text("result.per_person \(result.amountPerPerson)").bold()
-                Text("result.group_total \(result.total)").font(.caption).foregroundStyle(.secondary)
+                Text("result.per_person \(YenFormatting.grouped(result.amountPerPerson))").bold()
+                Text("result.group_total \(YenFormatting.grouped(result.total))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -77,51 +63,27 @@ private extension SakuttoSplitValidationIssue {
 
 #Preview("results") {
     Form {
-        CalculationResultSection(
-            results: [
-                GroupCalculationResult(groupID: UUID(), name: "部長", amountPerPerson: 10000, total: 10000),
-                GroupCalculationResult(groupID: UUID(), name: "一般", amountPerPerson: 6200, total: 24800)
-            ],
-            difference: -200,
-            validationIssue: nil,
-            collectionSeats: {
-                let groupID = UUID()
-                return (0..<4).map { index in
-                    CollectionSeat(
-                        id: CollectionSeatID(groupID: groupID, index: index),
-                        groupName: "一般",
-                        displayNumber: index + 1,
-                        amountPerPerson: 6200,
-                        isPaid: index == 1
-                    )
-                }
-            }(),
-            unpaidShareText: "🍻 未払いのお願い 🍻",
-            isUnpaidShareEnabled: true,
-            onSettleComplete: {}
-        )
+        Section("section.results") {
+            CalculationResultSection(
+                results: [
+                    GroupCalculationResult(groupID: UUID(), name: "部長", amountPerPerson: 10000, total: 10000),
+                    GroupCalculationResult(groupID: UUID(), name: "一般", amountPerPerson: 6200, total: 24800)
+                ],
+                difference: -200,
+                validationIssue: nil
+            )
+        }
     }
 }
 
 #Preview("empty total") {
     Form {
-        CalculationResultSection(
-            results: [],
-            difference: 0,
-            validationIssue: .emptyTotalAmount,
-            onSettleComplete: {}
-        )
-    }
-}
-
-#Preview("hidden") {
-    Form {
-        CalculationResultSection(
-            results: [],
-            difference: 0,
-            validationIssue: .emptyTotalAmount,
-            collectionSeats: [],
-            onSettleComplete: {}
-        )
+        Section("section.results") {
+            CalculationResultSection(
+                results: [],
+                difference: 0,
+                validationIssue: .emptyTotalAmount
+            )
+        }
     }
 }
