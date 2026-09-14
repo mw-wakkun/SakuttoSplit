@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// 割り勘計算画面。セクションの組み立てと Intent 転送だけを行う
 struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
@@ -58,7 +59,6 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                         CalculationResultSection(
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
-                            shareText: presenter.viewState.shareText,
                             validationIssue: presenter.viewState.validationIssue,
                             collectionSeats: presenter.collectionState.seats,
                             unpaidShareText: presenter.unpaidShareText,
@@ -76,15 +76,17 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                         restoreToolbarItem
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        hideAdsToolbarItem
+                        moreMenuToolbarItem
                     }
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
+                        keyboardPrimaryAction
                         Button("action.done") { focusedField = nil }
                     }
                 }
             }
 
+            stickyShare
             adBannerSlot
         }
         .background {
@@ -93,6 +95,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         }
         .onAppear {
             adsController.refreshAdFreeState()
+            Task { @MainActor in
+                focusTotalAmountIfNeeded()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -151,15 +156,28 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         }
     }
 
-    /// リセットしてから広告。Presenter は SDK を知らない
+    /// リセットしてから広告。成功時は総額へ戻す。Presenter は SDK を知らない
     private func settleComplete() {
-        focusedField = nil
         let canSettle = presenter.viewState.validationIssue == nil
         presenter.didTapSettleComplete()
-        guard canSettle, let rootViewController = rootViewControllerBox.rootViewController else {
+        guard canSettle else {
+            focusedField = nil
+            return
+        }
+        Task { @MainActor in
+            focusTotalAmountIfNeeded()
+        }
+        guard let rootViewController = rootViewControllerBox.rootViewController else {
             return
         }
         adsController.presentInterstitialIfEligible(from: rootViewController)
+    }
+
+    /// 総額が空かつ VoiceOver オフのときだけ総額へフォーカスする。復元・編成適用では呼ばない
+    private func focusTotalAmountIfNeeded() {
+        guard presenter.viewState.totalAmountText.isEmpty else { return }
+        guard !UIAccessibility.isVoiceOverRunning else { return }
+        focusedField = .totalAmount
     }
 
     @ViewBuilder
@@ -240,20 +258,31 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         )
     }
 
-    private var hideAdsToolbarItem: some View {
-        Group {
-            if adsController.isAdFree {
-                Text("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
-            } else {
-                Button {
-                    hideAdsForToday()
-                } label: {
-                    Image(systemName: "video.slash")
+    private var moreMenuToolbarItem: some View {
+        Menu {
+            Section {
+                if adsController.isAdFree {
+                    Text("ads.off_remaining \(AdFreeRemaining.hours(remaining: adsController.adFreeRemaining))")
+                } else {
+                    Button("ads.hide_for_today", action: hideAdsForToday)
                 }
-                .accessibilityLabel("ads.hide_for_today")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .accessibilityLabel("menu.more")
+    }
+
+    @ViewBuilder
+    private var keyboardPrimaryAction: some View {
+        if presenter.viewState.isShareEnabled {
+            ShareLink(item: presenter.viewState.shareText) {
+                Label("share.button", systemImage: "square.and.arrow.up")
+                    .labelStyle(.iconOnly)
+            }
+        } else {
+            Button("action.next") {
+                focusedField = focusedField?.next(in: presenter.viewState.groups)
             }
         }
     }
@@ -269,6 +298,16 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 // MARK: - Ad Banner
 
 private extension SakuttoSplitView {
+
+    @ViewBuilder
+    var stickyShare: some View {
+        if focusedField == nil {
+            ShareResultButton(
+                shareText: presenter.viewState.shareText,
+                isEnabled: presenter.viewState.isShareEnabled
+            )
+        }
+    }
 
     var adBannerSlot: some View {
         Group {

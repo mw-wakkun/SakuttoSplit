@@ -7,11 +7,10 @@
 
 import SwiftUI
 
-/// 計算結果の値だけを受ける。入力中の TextField とは切り離す
+/// 計算結果の値だけを受ける。メインシェアは親の sticky に置く
 struct CalculationResultSection: View {
     let results: [GroupCalculationResult]
     let difference: Int
-    let shareText: String
     let validationIssue: SakuttoSplitValidationIssue?
     var collectionSeats: [CollectionSeat] = []
     var unpaidShareText: String = ""
@@ -33,9 +32,6 @@ struct CalculationResultSection: View {
                 .font(.footnote)
                 .foregroundStyle(.red)
         }
-
-        // ShareLink + listRowBackground は EquatableView に包むと行背景が落ち、白文字が見えなくなる
-        ShareResultButton(shareText: shareText, isEnabled: validationIssue == nil)
 
         if !collectionSeats.isEmpty {
             CollectionSection(
@@ -87,7 +83,6 @@ private extension SakuttoSplitValidationIssue {
                 GroupCalculationResult(groupID: UUID(), name: "一般", amountPerPerson: 6200, total: 24800)
             ],
             difference: -200,
-            shareText: "🍻 本日のお会計 🍻",
             validationIssue: nil,
             collectionSeats: {
                 let groupID = UUID()
@@ -113,7 +108,6 @@ private extension SakuttoSplitValidationIssue {
         CalculationResultSection(
             results: [],
             difference: 0,
-            shareText: "",
             validationIssue: .emptyTotalAmount,
             onSettleComplete: {}
         )
@@ -125,7 +119,6 @@ private extension SakuttoSplitValidationIssue {
         CalculationResultSection(
             results: [],
             difference: 0,
-            shareText: "",
             validationIssue: .emptyTotalAmount,
             collectionSeats: [],
             onSettleComplete: {}

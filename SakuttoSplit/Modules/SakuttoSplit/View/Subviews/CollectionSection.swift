@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 回収ボード。メインの緑シェアとは別セクション。資格判定は Presenter が渡す
+/// 回収ボード。メインの sticky シェアとは別セクション。資格判定は Presenter が渡す
 struct CollectionSection: View {
     let seats: [CollectionSeat]
     let unpaidShareText: String
