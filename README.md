@@ -21,9 +21,10 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 - **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面は `viewState.shareText`、入力バリデーションもここ。
 - **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
 - **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
-- **Router**: `SakuttoSplitModule`（Presenter と bannerAdUnitID）を返す。`AnyView` は使わない。
-- **App**: `assembleModule()` は `init` のみ。Presenter を `@StateObject` で所有する。
-- **Config**: 広告ユニット ID（`AdConfiguration`）と入力上限（`InputLimits`）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
+- **Router**: `SakuttoSplitModule`（Presenter、`AdsController`、banner / interstitial / rewarded の 3 ID）を返す。`AnyView` は使わない。
+- **App**: `assembleModule()` は `init` のみ。Presenter と `AdsController` を `@StateObject` で所有する。SDK `start` 完了後に `startLoadingIfNeeded`。
+- **Ads**: 資格判定は `AdEligibility`、広告オフ期限は `AdFreeStore`（UserDefaults）。`GoogleMobileAds` の import は App / `AdBannerView` / `AdsController` のみ。計算 Presenter は広告 SDK を知らない。
+- **Config**: 広告ユニット ID（`AdConfiguration`。DEBUG は Google テスト ID、Release は本番 3 ID）と入力上限（`InputLimits`）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
 
 プロトコルは `SakuttoSplitContract.swift` に集約し、Presenter / Interactor はプロトコル経由で差し替えできるようにしています。
 
@@ -33,6 +34,16 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 - Interactor: 均等割り、固定額と割合の混合、端数単位、空入力、固定額超過、同名グループなど
 - Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否
 - 計算結果の identity はグループ名ではなく `groupID`
+- 広告: 資格判定・精算リセット・広告オフ期限。SDK 本体は叩かない
+
+## 広告
+割り勘の「サクッと」を維持するため、広告は入力の邪魔にならない位置と、ユーザーが自分で区切った直後にだけ出す。
+
+- **バナー**: 画面最下部、Form の外。キーボード表示中（いずれかの入力がフォーカス中）は高さ 0 で畳み、確認中だけ出す。広告オフ中も畳む。SDK 未 ready かつキーボードなしのときは高さ 50 のプレースホルダ。入力のたびに再 load しない。
+- **インタースティシャル**: 「精算完了（次の会計へ）」が成功した直後だけ。起動・シェア・入力・バックグラウンド復帰では出さない。起動から 15 秒未満、未 load、このプロセスで既に 1 回出した、広告オフ中は出さず、リセットだけ行う。待ちダイアログは出さない。
+- **リワード**: 右上のボタンを押したときだけ動画を再生する。最後まで見ると 24 時間、バナーとインタースティシャルの両方を止める。途中閉じでは付与しない。未 load なら「広告を読み込めませんでした」と短く伝え、落とさない。
+- **出さないもの**: App Open、起動時全画面、シェア前後の全画面、ATT ダイアログ（v2.0.0 は非パーソナライズ）。
+- **ID**: DEBUG は Google 公式テスト ID。Release は AdMob の本番 3 ID（バナーは現行、interstitial / rewarded はコンソール発行後に `AdConfiguration` へ）。`GADApplicationIdentifier` は変えない。空の本番 ID のまま Store 提出しない。
 
 ## スクリーンショット
 | 入力画面 | 計算結果とシェア |
