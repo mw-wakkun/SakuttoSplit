@@ -15,9 +15,12 @@ struct SakuttoSplitModule {
 
 /// VIPER の各部品を初期化して繋ぎ合わせる
 enum SakuttoSplitRouter {
-    @MainActor
+    static func assembleModule() -> SakuttoSplitModule {
+        assembleModule(adConfiguration: AdConfiguration())
+    }
+
     static func assembleModule(
-        adConfiguration: any AdConfigurationProviding = AdConfiguration()
+        adConfiguration: any AdConfigurationProviding
     ) -> SakuttoSplitModule {
         let interactor = SakuttoSplitInteractor()
         let presenter = SakuttoSplitPresenter(interactor: interactor)
