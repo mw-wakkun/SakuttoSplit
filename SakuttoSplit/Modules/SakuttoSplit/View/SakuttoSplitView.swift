@@ -45,7 +45,11 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
                             shareText: presenter.viewState.shareText,
-                            validationIssue: presenter.viewState.validationIssue
+                            validationIssue: presenter.viewState.validationIssue,
+                            onSettleComplete: {
+                                focusedField = nil
+                                presenter.didTapSettleComplete()
+                            }
                         )
                     }
                 }

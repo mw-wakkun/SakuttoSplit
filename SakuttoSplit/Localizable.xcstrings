@@ -213,6 +213,17 @@
         }
       }
     },
+    "settle.complete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精算完了（次の会計へ）"
+          }
+        }
+      }
+    },
     "share.button" : {
       "extractionState" : "manual",
       "localizations" : {
