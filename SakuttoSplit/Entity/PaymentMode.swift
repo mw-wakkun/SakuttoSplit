@@ -8,7 +8,7 @@
 import Foundation
 
 /// 参加者グループの支払い方法
-enum PaymentMode: Equatable, Sendable {
+enum PaymentMode: Equatable, Hashable, Sendable {
     /// 残金を倍率で按分する
     case ratio
     /// 1人あたりの固定額を支払う

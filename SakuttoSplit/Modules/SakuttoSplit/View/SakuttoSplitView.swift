@@ -9,9 +9,10 @@ import SwiftUI
 
 /// 割り勘計算画面のメインView
 struct SakuttoSplitView: View {
-    
+
     @ObservedObject var presenter: SakuttoSplitPresenter
-    
+    let bannerAdUnitID: String
+
     var body: some View {
         NavigationStack { // iOS 16以降の推奨
             Form {
@@ -20,13 +21,13 @@ struct SakuttoSplitView: View {
                     totalAmountField
                     roundingUnitPicker
                 }
-                
+
                 // MARK: 参加者グループ
                 Section("参加者グループ") {
                     groupsList
                     addGroupButton
                 }
-                
+
                 // MARK: 計算結果
                 Section("計算結果") {
                     resultsList
@@ -45,142 +46,125 @@ struct SakuttoSplitView: View {
             }
         }
         // MARK: 広告バナー表示
-#if DEBUG
-        // テスト用広告ID
-        AdBannerView(adUnitID: "ca-app-pub-3940256099942544/2934735716")
+        AdBannerView(adUnitID: bannerAdUnitID)
             .frame(height: 50)
-#else
-        // 本番用広告ID
-        AdBannerView(adUnitID: "ca-app-pub-9676260030977388/3738962239")
-            .frame(height: 50)
-#endif
     }
 }
 
 // MARK: - View Components
 
 private extension SakuttoSplitView {
-    
+
     var totalAmountField: some View {
         HStack {
-            TextField("例: 35000", text: $presenter.totalAmountText)
+            TextField("例: 35000", text: totalAmountBinding)
                 .keyboardType(.numberPad)
                 .font(.title2)
-                .onChange(of: presenter.totalAmountText) {
-                    if presenter.totalAmountText.count > 8 {
-                        presenter.totalAmountText = String(presenter.totalAmountText.prefix(8))
-                    }
-                }
             Text("円")
         }
     }
-    
+
     var roundingUnitPicker: some View {
-        Picker("割り勘の単位", selection: $presenter.selectedRoundingUnit) {
-            ForEach([1, 10, 100, 500, 1000], id: \.self) { unit in
-                Text("\(unit)円").tag(unit)
+        Picker("割り勘の単位", selection: roundingUnitBinding) {
+            ForEach(RoundingUnit.allCases, id: \.self) { unit in
+                Text(unit.displayName).tag(unit)
             }
         }
     }
-    
+
     var groupsList: some View {
-        ForEach($presenter.groups) { $group in
+        ForEach(presenter.viewState.groups) { group in
             VStack(spacing: 12) {
                 // 上段：グループ名・人数・削除
                 HStack {
-                    TextField("グループ名", text: $group.name)
+                    TextField("グループ名", text: nameBinding(for: group.id))
                         .textFieldStyle(.roundedBorder)
-                        .onChange(of: group.name) { presenter.calculate() }
-                    
-                    stepperSection(for: $group)
-                    
+
+                    stepperSection(for: group)
+
                     deleteButton(for: group.id)
                 }
-                
+
                 // 下段：モード切替・詳細入力
                 HStack {
-                    Picker("モード", selection: $group.isFixed) {
-                        Text("割合").tag(false)
-                        Text("固定額").tag(true)
+                    Picker("モード", selection: paymentModeBinding(for: group.id)) {
+                        Text("割合").tag(PaymentMode.ratio)
+                        Text("固定額").tag(PaymentMode.fixed)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: group.isFixed) { presenter.calculate() }
-                    
-                    detailInputField(for: $group)
+
+                    detailInputField(for: group)
                 }
             }
             .padding(.vertical, 4)
         }
     }
-    
-    func stepperSection(for group: Binding<AttendeeGroupDraft>) -> some View {
+
+    func stepperSection(for group: AttendeeGroupDraft) -> some View {
         HStack(spacing: 8) {
-            let currentCount = Int(group.wrappedValue.countText) ?? 1
-            
+            let currentCount = Int(group.countText) ?? 1
+
             Button(action: {
-                if currentCount > 1 { group.wrappedValue.countText = "\(currentCount - 1)" }
-                presenter.calculate()
+                if currentCount > InputLimits.groupCountRange.lowerBound {
+                    presenter.didChangeGroupCount(id: group.id, countText: "\(currentCount - 1)")
+                }
             }) {
                 Image(systemName: "minus.circle.fill").font(.title3)
             }
             .buttonStyle(.borderless)
-            .disabled(currentCount <= 1)
-            
-            TextField("", text: group.countText)
+            .disabled(currentCount <= InputLimits.groupCountRange.lowerBound)
+
+            TextField("", text: countBinding(for: group.id))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .frame(width: 35)
-                .onChange(of: group.wrappedValue.countText) {
-                    presenter.calculate()
-                }
-            
+
             Button(action: {
-                if currentCount < 999 { group.wrappedValue.countText = "\(currentCount + 1)" }
-                presenter.calculate()
+                if currentCount < InputLimits.groupCountRange.upperBound {
+                    presenter.didChangeGroupCount(id: group.id, countText: "\(currentCount + 1)")
+                }
             }) {
                 Image(systemName: "plus.circle.fill").font(.title3)
             }
             .buttonStyle(.borderless)
-            
+
             Text("人")
         }
     }
-    
-    func detailInputField(for group: Binding<AttendeeGroupDraft>) -> some View {
+
+    func detailInputField(for group: AttendeeGroupDraft) -> some View {
         HStack {
-            if group.wrappedValue.isFixed {
-                TextField("金額", text: group.fixedAmountText)
+            if group.mode == .fixed {
+                TextField("金額", text: fixedAmountBinding(for: group.id))
                     .keyboardType(.numberPad)
                     .textFieldStyle(.roundedBorder)
-                    .onChange(of: group.wrappedValue.fixedAmountText) { presenter.calculate() }
                 Text("円")
             } else {
-                TextField("倍率", text: group.ratioText)
+                TextField("倍率", text: ratioBinding(for: group.id))
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.roundedBorder)
-                    .onChange(of: group.wrappedValue.ratioText) { presenter.calculate() }
                 Text("倍")
             }
         }
     }
-    
+
     func deleteButton(for id: UUID) -> some View {
         Button(role: .destructive) {
-            presenter.removeGroup(id: id)
+            presenter.didTapRemoveGroup(id: id)
         } label: {
             Image(systemName: "trash").foregroundColor(.red)
         }
         .buttonStyle(.borderless)
     }
-    
+
     var addGroupButton: some View {
-        Button(action: { presenter.addGroup() }) {
+        Button(action: { presenter.didTapAddGroup() }) {
             Label("グループを追加", systemImage: "plus.circle.fill")
         }
     }
-    
+
     var resultsList: some View {
-        ForEach(presenter.calculationResults) { result in
+        ForEach(presenter.viewState.results) { result in
             HStack {
                 Text(result.name)
                 Spacer()
@@ -191,19 +175,19 @@ private extension SakuttoSplitView {
             }
         }
     }
-    
+
     var summarySection: some View {
         HStack {
-            Text(presenter.difference >= 0 ? "✨ 余剰金" : "⚠️ 不足金")
+            Text(presenter.viewState.difference >= 0 ? "✨ 余剰金" : "⚠️ 不足金")
             Spacer()
-            Text("\(abs(presenter.difference)) 円")
+            Text("\(abs(presenter.viewState.difference)) 円")
                 .bold()
-                .foregroundColor(presenter.difference >= 0 ? .green : .red)
+                .foregroundColor(presenter.viewState.difference >= 0 ? .green : .red)
         }
     }
-    
+
     var shareButton: some View {
-        ShareLink(item: generateShareText()) {
+        ShareLink(item: presenter.shareText()) {
             Label("結果をLINE等でシェア", systemImage: "message.fill")
                 .font(.headline)
                 .foregroundColor(.white)
@@ -212,24 +196,58 @@ private extension SakuttoSplitView {
         }
         .listRowBackground(Color.green) // ボタンの背景を緑にする
     }
-    
-    func generateShareText() -> String {
-        var text = "🍻 本日のお会計 🍻\n"
-        text += "総額: \(presenter.totalAmountText) 円\n"
-        text += "----------------\n"
-        
-        for result in presenter.calculationResults {
-            text += "\(result.name): 1人 \(result.amountPerPerson)円\n"
-        }
-        
-        text += "----------------\n"
-        if presenter.difference >= 0 {
-            text += "✨ 余剰金: \(abs(presenter.difference))円\n"
-        } else {
-            text += "⚠️ 不足金: \(abs(presenter.difference))円\n"
-        }
-        text += "※PayPay等で送金をお願いします！"
-        
-        return text
+}
+
+// MARK: - Intent Bindings
+
+private extension SakuttoSplitView {
+
+    var totalAmountBinding: Binding<String> {
+        Binding(
+            get: { presenter.viewState.totalAmountText },
+            set: { presenter.didChangeTotalAmount($0) }
+        )
+    }
+
+    var roundingUnitBinding: Binding<RoundingUnit> {
+        Binding(
+            get: { presenter.viewState.roundingUnit },
+            set: { presenter.didChangeRoundingUnit($0) }
+        )
+    }
+
+    func nameBinding(for id: UUID) -> Binding<String> {
+        Binding(
+            get: { presenter.viewState.groups.first(where: { $0.id == id })?.name ?? "" },
+            set: { presenter.didChangeGroupName(id: id, name: $0) }
+        )
+    }
+
+    func countBinding(for id: UUID) -> Binding<String> {
+        Binding(
+            get: { presenter.viewState.groups.first(where: { $0.id == id })?.countText ?? "" },
+            set: { presenter.didChangeGroupCount(id: id, countText: $0) }
+        )
+    }
+
+    func paymentModeBinding(for id: UUID) -> Binding<PaymentMode> {
+        Binding(
+            get: { presenter.viewState.groups.first(where: { $0.id == id })?.mode ?? .ratio },
+            set: { presenter.didChangePaymentMode(id: id, mode: $0) }
+        )
+    }
+
+    func fixedAmountBinding(for id: UUID) -> Binding<String> {
+        Binding(
+            get: { presenter.viewState.groups.first(where: { $0.id == id })?.fixedAmountText ?? "" },
+            set: { presenter.didChangeFixedAmount(id: id, text: $0) }
+        )
+    }
+
+    func ratioBinding(for id: UUID) -> Binding<String> {
+        Binding(
+            get: { presenter.viewState.groups.first(where: { $0.id == id })?.ratioText ?? "" },
+            set: { presenter.didChangeRatio(id: id, text: $0) }
+        )
     }
 }

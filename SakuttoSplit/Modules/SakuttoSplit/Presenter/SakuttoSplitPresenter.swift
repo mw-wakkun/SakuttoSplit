@@ -5,67 +5,116 @@
 //  Created by masafumi wakugawa on 2026/05/02.
 //
 
-import SwiftUI
 import Combine
+import Foundation
 
-/// Viewの状態管理と、Interactor/Routerとの橋渡しを行うプレゼンター
-final class SakuttoSplitPresenter: ObservableObject {
-    
-    // MARK: - Input Properties (Published)
-    
-    @Published var totalAmountText: String = "" {
-        didSet { calculate() }
-    }
-    @Published var selectedRoundingUnit: Int = 100 {
-        didSet { calculate() }
-    }
-    @Published var groups: [AttendeeGroupDraft] = [
-        AttendeeGroupDraft(name: "部長", countText: "1", isFixed: true, fixedAmountText: "10000"),
-        AttendeeGroupDraft(name: "一般", countText: "4", isFixed: false, ratioText: "1.0")
-    ]
-    
-    // MARK: - Output Properties (Published)
-    
-    @Published private(set) var calculationResults: [GroupCalculationResult] = []
-    @Published private(set) var collectedTotal: Int = 0
-    @Published private(set) var difference: Int = 0
-    
-    // MARK: - Dependencies
-    
+/// View の状態管理と、Interactor への計算依頼を行うプレゼンター
+@MainActor
+final class SakuttoSplitPresenter: SakuttoSplitPresentable {
+
+    @Published private(set) var viewState: SakuttoSplitViewState
+
     private let interactor: SakuttoSplitInteractorProtocol
-    
-    // MARK: - Lifecycle
-    
-    init(interactor: SakuttoSplitInteractorProtocol) {
+
+    convenience init(interactor: SakuttoSplitInteractorProtocol) {
+        self.init(interactor: interactor, initialState: .initial)
+    }
+
+    init(
+        interactor: SakuttoSplitInteractorProtocol,
+        initialState: SakuttoSplitViewState
+    ) {
         self.interactor = interactor
-        calculate()
+        var state = initialState
+        Self.applyCalculation(to: &state, interactor: interactor)
+        self.viewState = state
     }
-    
-    // MARK: - Internal Methods
-    
-    /// 現在の入力状況に基づいて再計算を行う
-    func calculate() {
-        let input = BillCalculationInput(
-            totalAmount: Int(totalAmountText) ?? 0,
-            roundingUnit: RoundingUnit(rawValue: selectedRoundingUnit) ?? .hundred,
-            groups: groups.map { $0.toDomain() }
+
+    func didChangeTotalAmount(_ text: String) {
+        applyUpdate { $0.totalAmountText = InputLimits.sanitizedTotalAmountText(text) }
+    }
+
+    func didChangeRoundingUnit(_ unit: RoundingUnit) {
+        applyUpdate { $0.roundingUnit = unit }
+    }
+
+    func didChangeGroupName(id: UUID, name: String) {
+        applyUpdate { state in
+            guard let index = state.groups.firstIndex(where: { $0.id == id }) else { return }
+            state.groups[index].name = name
+        }
+    }
+
+    func didChangeGroupCount(id: UUID, countText: String) {
+        applyUpdate { state in
+            guard let index = state.groups.firstIndex(where: { $0.id == id }) else { return }
+            state.groups[index].countText = InputLimits.sanitizedCountText(countText)
+        }
+    }
+
+    func didChangePaymentMode(id: UUID, mode: PaymentMode) {
+        applyUpdate { state in
+            guard let index = state.groups.firstIndex(where: { $0.id == id }) else { return }
+            state.groups[index].mode = mode
+        }
+    }
+
+    func didChangeFixedAmount(id: UUID, text: String) {
+        applyUpdate { state in
+            guard let index = state.groups.firstIndex(where: { $0.id == id }) else { return }
+            state.groups[index].fixedAmountText = InputLimits.sanitizedFixedAmountText(text)
+        }
+    }
+
+    func didChangeRatio(id: UUID, text: String) {
+        applyUpdate { state in
+            guard let index = state.groups.firstIndex(where: { $0.id == id }) else { return }
+            state.groups[index].ratioText = InputLimits.sanitizedRatioText(text)
+        }
+    }
+
+    func didTapAddGroup() {
+        applyUpdate { state in
+            let newGroupName = "新規グループ\(state.groups.count + 1)"
+            state.groups.append(
+                AttendeeGroupDraft(name: newGroupName, countText: "1", isFixed: false, ratioText: "1.0")
+            )
+        }
+    }
+
+    func didTapRemoveGroup(id: UUID) {
+        applyUpdate { state in
+            state.groups.removeAll { $0.id == id }
+        }
+    }
+
+    func shareText() -> String {
+        ShareTextBuilder.build(from: viewState)
+    }
+
+    /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える
+    private func applyUpdate(_ update: (inout SakuttoSplitViewState) -> Void) {
+        var next = viewState
+        update(&next)
+        guard next != viewState else { return }
+        Self.applyCalculation(to: &next, interactor: interactor)
+        viewState = next
+    }
+
+    private static func applyCalculation(
+        to state: inout SakuttoSplitViewState,
+        interactor: SakuttoSplitInteractorProtocol
+    ) {
+        let output = interactor.calculateBill(makeInput(from: state))
+        state.results = output.results
+        state.difference = output.difference
+    }
+
+    private static func makeInput(from state: SakuttoSplitViewState) -> BillCalculationInput {
+        BillCalculationInput(
+            totalAmount: Int(state.totalAmountText) ?? 0,
+            roundingUnit: state.roundingUnit,
+            groups: state.groups.map { $0.toDomain() }
         )
-        let output = interactor.calculateBill(input)
-        self.calculationResults = output.results
-        self.collectedTotal = output.collectedTotal
-        self.difference = output.difference
-    }
-    
-    /// 新しい参加者グループを末尾に追加する
-    func addGroup() {
-        let newGroupName = "新規グループ\(groups.count + 1)"
-        groups.append(AttendeeGroupDraft(name: newGroupName, countText: "1", isFixed: false, ratioText: "1.0"))
-        calculate()
-    }
-    
-    /// 指定されたIDを持つグループを削除する
-    func removeGroup(id: UUID) {
-        groups.removeAll(where: { $0.id == id })
-        calculate()
     }
 }

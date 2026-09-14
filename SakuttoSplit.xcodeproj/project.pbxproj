@@ -38,8 +38,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7F14AFA52FA5F82F00FEBF1E /* SakuttoSplitTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = SakuttoSplitTests;
 			sourceTree = "<group>";
 		};

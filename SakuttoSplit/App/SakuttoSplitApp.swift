@@ -10,9 +10,11 @@ import GoogleMobileAds
 
 @main
 struct SakuttoSplitApp: App {
+    @State private var splitView = SakuttoSplitRouter.assembleModule()
+
     var body: some Scene {
         WindowGroup {
-            SakuttoSplitRouter.assembleModule()
+            splitView
                 .task {
                     await MobileAds.shared.start()
                 }

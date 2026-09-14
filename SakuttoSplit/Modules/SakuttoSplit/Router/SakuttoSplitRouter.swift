@@ -7,18 +7,17 @@
 
 import SwiftUI
 
-/// VIPERの各部品を初期化して繋ぎ合わせる（組み立てる）クラス
-class SakuttoSplitRouter {
-    
-    static func assembleModule() -> AnyView {
-        // 1. Interactor（計算職人）を作る
+/// VIPER の各部品を初期化して繋ぎ合わせる
+@MainActor
+final class SakuttoSplitRouter: SakuttoSplitRouterProtocol {
+
+    static func assembleModule() -> SakuttoSplitView {
         let interactor = SakuttoSplitInteractor()
-        // 2. Presenter（現場監督）を作り、Interactorを渡す
         let presenter = SakuttoSplitPresenter(interactor: interactor)
-        // 3. View（見た目）を作り、Presenterを渡す
-        let view = SakuttoSplitView(presenter: presenter)
-        
-        // AnyViewで包んで返す（SwiftUIの画面として表示できるようにするため）
-        return AnyView(view)
+        let adConfiguration = AdConfiguration()
+        return SakuttoSplitView(
+            presenter: presenter,
+            bannerAdUnitID: adConfiguration.bannerAdUnitID
+        )
     }
 }
