@@ -11,6 +11,8 @@ import Foundation
 enum InputLimits {
     static let totalAmountMaxDigits = 8
     static let groupCountRange = 1...999
+    /// これ以下なら席を人数分展開する。超えたグループは 1 行
+    static let collectionExpandMaxCount = 20
 
     static func sanitizedTotalAmountText(_ text: String) -> String {
         sanitizedDigitText(text, maxDigits: totalAmountMaxDigits)

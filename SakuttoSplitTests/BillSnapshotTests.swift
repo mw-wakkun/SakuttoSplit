@@ -85,8 +85,78 @@ final class BillSnapshotTests: XCTestCase {
         }
     }
 
+    func testDecode_Schema1JSONWithoutPaidSeatKeys_DefaultsToEmpty() throws {
+        let groupID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        let data = try schema1JSON(groupID: groupID, totalAmountText: "35000")
+
+        let decoded = try JSONDecoder().decode(BillSnapshot.self, from: data)
+
+        XCTAssertEqual(decoded.schemaVersion, 1)
+        XCTAssertTrue(decoded.isReadableSchema)
+        XCTAssertFalse(decoded.isCurrentSchema)
+        XCTAssertEqual(decoded.paidSeatKeys, [])
+        XCTAssertEqual(decoded.totalAmountText, "35000")
+        XCTAssertEqual(decoded.roundingUnit, .hundred)
+        XCTAssertEqual(decoded.groups.map(\.id), [groupID])
+        XCTAssertEqual(decoded.groups.map(\.name), ["部長"])
+    }
+
+    func testCodableRoundTrip_Schema2_PreservesPaidSeatKeys() throws {
+        let groupID = UUID()
+        let paidKey = CollectionSeatID(groupID: groupID, index: 0).rawValue
+        let snapshot = BillSnapshot(
+            totalAmountText: "35000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "4")],
+            paidSeatKeys: [paidKey]
+        )
+
+        let decoded = try roundTrip(snapshot)
+
+        XCTAssertEqual(decoded.schemaVersion, 2)
+        XCTAssertEqual(decoded.schemaVersion, BillSnapshot.currentSchemaVersion)
+        XCTAssertTrue(decoded.isCurrentSchema)
+        XCTAssertTrue(decoded.isReadableSchema)
+        XCTAssertEqual(decoded.paidSeatKeys, [paidKey])
+        XCTAssertEqual(decoded, snapshot)
+    }
+
+    func testEncode_AlwaysWritesPaidSeatKeysAndSchema2() throws {
+        let snapshot = BillSnapshot(
+            totalAmountText: "1000",
+            roundingUnit: .one,
+            groups: [AttendeeGroupDraft(name: "全員")]
+        )
+
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: try JSONEncoder().encode(snapshot)) as? [String: Any]
+        )
+
+        XCTAssertEqual(object["schemaVersion"] as? Int, 2)
+        XCTAssertEqual(object["paidSeatKeys"] as? [String], [])
+    }
+
     private func roundTrip(_ snapshot: BillSnapshot) throws -> BillSnapshot {
         let data = try JSONEncoder().encode(snapshot)
         return try JSONDecoder().decode(BillSnapshot.self, from: data)
+    }
+
+    private func schema1JSON(groupID: UUID, totalAmountText: String) throws -> Data {
+        let json: [String: Any] = [
+            "schemaVersion": 1,
+            "totalAmountText": totalAmountText,
+            "roundingUnit": 100,
+            "groups": [
+                [
+                    "id": groupID.uuidString,
+                    "name": "部長",
+                    "countText": "1",
+                    "mode": "fixed",
+                    "fixedAmountText": "10000",
+                    "ratioText": "1.0"
+                ]
+            ]
+        ]
+        return try JSONSerialization.data(withJSONObject: json)
     }
 }

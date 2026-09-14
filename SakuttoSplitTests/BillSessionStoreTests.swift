@@ -52,11 +52,55 @@ final class BillSessionStoreTests: XCTestCase {
     }
 
     func testLastBill_UnknownSchemaVersion_ReturnsNil() {
-        let outdated = makeSnapshot(totalAmountText: "12000", schemaVersion: 2)
+        let outdated = makeSnapshot(totalAmountText: "12000", schemaVersion: 3)
         let data = try? JSONEncoder().encode(outdated)
         defaults.set(data, forKey: BillSessionStore.lastBillKey)
 
         XCTAssertNil(store.lastBill)
+    }
+
+    func testLastBill_Schema1DataWithoutPaidSeatKeys_IsReadable() throws {
+        let groupID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        let json: [String: Any] = [
+            "schemaVersion": 1,
+            "totalAmountText": "35000",
+            "roundingUnit": 100,
+            "groups": [
+                [
+                    "id": groupID.uuidString,
+                    "name": "部長",
+                    "countText": "1",
+                    "mode": "fixed",
+                    "fixedAmountText": "10000",
+                    "ratioText": "1.0"
+                ]
+            ]
+        ]
+        defaults.set(try JSONSerialization.data(withJSONObject: json), forKey: BillSessionStore.lastBillKey)
+
+        let lastBill = try XCTUnwrap(store.lastBill)
+
+        XCTAssertEqual(lastBill.schemaVersion, 1)
+        XCTAssertEqual(lastBill.paidSeatKeys, [])
+        XCTAssertEqual(lastBill.totalAmountText, "35000")
+        XCTAssertEqual(lastBill.groups.map(\.id), [groupID])
+    }
+
+    func testLastBill_Schema2WithPaidSeatKeys_RoundTrips() {
+        let groupID = UUID()
+        let paidKey = CollectionSeatID(groupID: groupID, index: 2).rawValue
+        let snapshot = BillSnapshot(
+            totalAmountText: "35000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "4")],
+            paidSeatKeys: [paidKey]
+        )
+
+        store.saveLastBill(snapshot)
+
+        XCTAssertEqual(store.lastBill, snapshot)
+        XCTAssertEqual(store.lastBill?.schemaVersion, 2)
+        XCTAssertEqual(store.lastBill?.paidSeatKeys, [paidKey])
     }
 
     func testLastBill_SameSnapshot_DoesNotRewrite() {

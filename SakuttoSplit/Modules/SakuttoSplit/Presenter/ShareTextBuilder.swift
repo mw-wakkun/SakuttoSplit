@@ -40,4 +40,22 @@ enum ShareTextBuilder {
 
         return text
     }
+
+    /// 未払い席だけの再シェア文。全員済・席なしは空文字
+    static func buildUnpaid(totalAmountText: String, unpaidSeats: [CollectionSeat]) -> String {
+        guard !unpaidSeats.isEmpty else { return "" }
+
+        var text = "🍻 未払いのお願い 🍻\n"
+        text += "総額: \(totalAmountText) 円\n"
+        text += "----------------\n"
+
+        for seat in unpaidSeats {
+            text += "\(seat.label): 1人 \(seat.amountPerPerson)円\n"
+        }
+
+        text += "----------------\n"
+        text += "※PayPay等で送金をお願いします！"
+
+        return text
+    }
 }

@@ -26,7 +26,7 @@ struct BillSessionStore: BillSessionStoring {
     var lastBill: BillSnapshot? {
         guard let data = defaults.data(forKey: Self.lastBillKey) else { return nil }
         guard let snapshot = try? decoder.decode(BillSnapshot.self, from: data) else { return nil }
-        guard snapshot.isCurrentSchema else { return nil }
+        guard snapshot.isReadableSchema else { return nil }
         return snapshot
     }
 

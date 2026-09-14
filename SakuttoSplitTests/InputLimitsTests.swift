@@ -28,4 +28,8 @@ final class InputLimitsTests: XCTestCase {
         XCTAssertEqual(InputLimits.sanitizedRatioText("1.2.5"), "1.25")
         XCTAssertEqual(InputLimits.sanitizedRatioText("."), ".")
     }
+
+    func testCollectionExpandMaxCount_Is20() {
+        XCTAssertEqual(InputLimits.collectionExpandMaxCount, 20)
+    }
 }
