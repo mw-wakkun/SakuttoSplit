@@ -21,6 +21,7 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didChangeRatio(id: UUID, text: String)
     func didTapAddGroup()
     func didTapRemoveGroup(id: UUID)
+    func didTapSettleComplete()
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする
@@ -28,7 +29,9 @@ protocol SakuttoSplitInteractorProtocol {
     func calculateBill(_ input: BillCalculationInput) -> BillCalculationOutput
 }
 
-/// 広告ユニット ID の供給
+/// 広告ユニット ID の供給。DEBUG / Release の切替は具象側
 protocol AdConfigurationProviding {
     var bannerAdUnitID: String { get }
+    var interstitialAdUnitID: String { get }
+    var rewardedAdUnitID: String { get }
 }

@@ -88,6 +88,12 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         }
     }
 
+    /// 精算完了。妥当な入力のときだけ起動時と同じ状態へ戻す。広告は知らない
+    func didTapSettleComplete() {
+        guard viewState.validationIssue == nil else { return }
+        applyUpdate { $0 = .initial }
+    }
+
     /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える
     private func applyUpdate(_ update: (inout SakuttoSplitViewState) -> Void) {
         var next = viewState

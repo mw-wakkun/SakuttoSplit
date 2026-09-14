@@ -303,6 +303,63 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertFalse(presenter.viewState.isShareEnabled)
     }
 
+    func testDidTapSettleComplete_WhenEmptyTotal_DoesNotChangeState() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let before = presenter.viewState
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+    }
+
+    func testDidTapSettleComplete_WhenNoGroups_DoesNotChangeState() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        presenter.didChangeTotalAmount("35000")
+        let firstID = presenter.viewState.groups[0].id
+        let secondID = presenter.viewState.groups[1].id
+        presenter.didTapRemoveGroup(id: firstID)
+        presenter.didTapRemoveGroup(id: secondID)
+        let before = presenter.viewState
+        let callsBeforeSettle = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState.validationIssue, .noGroups)
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle)
+    }
+
+    func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeState() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        presenter.didChangeTotalAmount("5000")
+        let before = presenter.viewState
+        let callsBeforeSettle = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState.validationIssue, .fixedAmountExceedsTotal)
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle)
+    }
+
+    func testDidTapSettleComplete_WhenValid_ResetsToCalculatedInitial() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didChangeRoundingUnit(.thousand)
+        let callsBeforeSettle = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle + 1)
+        Self.assertMatchesCalculatedInitial(presenter.viewState)
+    }
+
     func testValidation_FixedAmountExceedsTotal_DisablesShare_KeepsCalculation() {
         let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
 
@@ -313,6 +370,29 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.results[0].amountPerPerson, 10000)
         XCTAssertEqual(presenter.viewState.results[1].amountPerPerson, 0)
         XCTAssertEqual(presenter.viewState.difference, 5000)
+    }
+
+    /// グループ ID はリセットで作り直されるので、起動時 Presenter と中身だけ比べる
+    private static func assertMatchesCalculatedInitial(_ actual: SakuttoSplitViewState) {
+        let expected = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor()).viewState
+        XCTAssertEqual(actual.totalAmountText, expected.totalAmountText)
+        XCTAssertEqual(actual.roundingUnit, expected.roundingUnit)
+        XCTAssertEqual(actual.groups.map(groupSnapshot), expected.groups.map(groupSnapshot))
+        XCTAssertEqual(actual.results.map(resultSnapshot), expected.results.map(resultSnapshot))
+        XCTAssertEqual(actual.difference, expected.difference)
+        XCTAssertEqual(actual.shareText, expected.shareText)
+        XCTAssertEqual(actual.validationIssue, expected.validationIssue)
+        XCTAssertFalse(actual.isShareEnabled)
+    }
+
+    private static func groupSnapshot(_ group: AttendeeGroupDraft) -> [
+        String
+    ] {
+        [group.name, group.countText, "\(group.mode)", group.fixedAmountText, group.ratioText]
+    }
+
+    private static func resultSnapshot(_ result: GroupCalculationResult) -> [String] {
+        [result.name, "\(result.amountPerPerson)", "\(result.total)"]
     }
 
     private static let expectedShareTextForDefaultGroupsTotal35000 = """

@@ -11,6 +11,8 @@ import Foundation
 struct SakuttoSplitModule {
     let presenter: SakuttoSplitPresenter
     let bannerAdUnitID: String
+    let interstitialAdUnitID: String
+    let rewardedAdUnitID: String
 }
 
 /// VIPER の各部品を初期化して繋ぎ合わせる
@@ -26,7 +28,9 @@ enum SakuttoSplitRouter {
         let presenter = SakuttoSplitPresenter(interactor: interactor)
         return SakuttoSplitModule(
             presenter: presenter,
-            bannerAdUnitID: adConfiguration.bannerAdUnitID
+            bannerAdUnitID: adConfiguration.bannerAdUnitID,
+            interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
+            rewardedAdUnitID: adConfiguration.rewardedAdUnitID
         )
     }
 }

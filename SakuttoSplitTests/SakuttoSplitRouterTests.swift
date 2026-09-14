@@ -18,14 +18,35 @@ final class SakuttoSplitRouterTests: XCTestCase {
         XCTAssertEqual(module.presenter.viewState.groups.count, 2)
         XCTAssertFalse(module.bannerAdUnitID.isEmpty)
         XCTAssertEqual(module.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
+        XCTAssertEqual(module.interstitialAdUnitID, AdConfiguration.defaultInterstitialAdUnitID)
+        XCTAssertEqual(module.rewardedAdUnitID, AdConfiguration.defaultRewardedAdUnitID)
+    }
+
+    func testDefaultAdConfiguration_DebugTestIDsAreNonEmpty() {
+        let config = AdConfiguration()
+
+        XCTAssertFalse(config.bannerAdUnitID.isEmpty)
+        #if DEBUG
+        XCTAssertFalse(config.interstitialAdUnitID.isEmpty)
+        XCTAssertFalse(config.rewardedAdUnitID.isEmpty)
+        XCTAssertEqual(config.bannerAdUnitID, "ca-app-pub-3940256099942544/2934735716")
+        XCTAssertEqual(config.interstitialAdUnitID, "ca-app-pub-3940256099942544/4411468910")
+        XCTAssertEqual(config.rewardedAdUnitID, "ca-app-pub-3940256099942544/1712485313")
+        #endif
     }
 
     func testAssembleModule_UsesInjectedAdConfiguration() {
         let module = SakuttoSplitRouter.assembleModule(
-            adConfiguration: StubAdConfiguration(bannerAdUnitID: "ca-app-pub-test/injected")
+            adConfiguration: StubAdConfiguration(
+                bannerAdUnitID: "ca-app-pub-test/banner",
+                interstitialAdUnitID: "ca-app-pub-test/interstitial",
+                rewardedAdUnitID: "ca-app-pub-test/rewarded"
+            )
         )
 
-        XCTAssertEqual(module.bannerAdUnitID, "ca-app-pub-test/injected")
+        XCTAssertEqual(module.bannerAdUnitID, "ca-app-pub-test/banner")
+        XCTAssertEqual(module.interstitialAdUnitID, "ca-app-pub-test/interstitial")
+        XCTAssertEqual(module.rewardedAdUnitID, "ca-app-pub-test/rewarded")
     }
 
     /// 組み立て後の presenter はジェネリック View に型推論で渡せる
@@ -45,4 +66,6 @@ final class SakuttoSplitRouterTests: XCTestCase {
 
 private struct StubAdConfiguration: AdConfigurationProviding {
     let bannerAdUnitID: String
+    let interstitialAdUnitID: String
+    let rewardedAdUnitID: String
 }
