@@ -89,7 +89,7 @@ final class AdsController: ObservableObject, AdsControlling {
         adFreeRemaining = store.remaining(at: current)
         canRequestRewarded = !isAdFree
         if wasAdFree && !isAdFree {
-            Task { await startLoadingIfNeeded() }
+            Task { [weak self] in await self?.startLoadingIfNeeded() }
         }
     }
 
@@ -198,7 +198,9 @@ final class AdsController: ObservableObject, AdsControlling {
         isLoadingInterstitial = true
         let loaded = await loader.load(adUnitID: interstitialAdUnitID)
         loaded?.onDidFinish = { [weak self] in
-            Task { await self?.interstitialDidFinish() }
+            Task { @MainActor [weak self] in
+                await self?.interstitialDidFinish()
+            }
         }
         readyInterstitial = loaded
         isLoadingInterstitial = false
@@ -212,10 +214,14 @@ final class AdsController: ObservableObject, AdsControlling {
         isLoadingRewarded = true
         let loaded = await rewardedLoader.load(adUnitID: rewardedAdUnitID)
         loaded?.onDidEarnReward = { [weak self] in
-            self?.handleEarnedReward()
+            Task { @MainActor [weak self] in
+                self?.handleEarnedReward()
+            }
         }
         loaded?.onDidFinish = { [weak self] in
-            Task { await self?.rewardedDidFinish() }
+            Task { @MainActor [weak self] in
+                await self?.rewardedDidFinish()
+            }
         }
         readyRewarded = loaded
         isLoadingRewarded = false
@@ -250,11 +256,15 @@ private final class GoogleInterstitialAd: NSObject, InterstitialPresenting, Full
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        onDidFinish?()
+        Task { @MainActor [weak self] in
+            self?.onDidFinish?()
+        }
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        onDidFinish?()
+        Task { @MainActor [weak self] in
+            self?.onDidFinish?()
+        }
     }
 }
 
@@ -282,15 +292,21 @@ private final class GoogleRewardedAd: NSObject, RewardedPresenting, FullScreenCo
 
     func present(from rootViewController: UIViewController) {
         ad.present(from: rootViewController) { [weak self] in
-            self?.onDidEarnReward?()
+            Task { @MainActor [weak self] in
+                self?.onDidEarnReward?()
+            }
         }
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        onDidFinish?()
+        Task { @MainActor [weak self] in
+            self?.onDidFinish?()
+        }
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        onDidFinish?()
+        Task { @MainActor [weak self] in
+            self?.onDidFinish?()
+        }
     }
 }

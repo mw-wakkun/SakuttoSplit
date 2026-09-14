@@ -99,7 +99,8 @@ struct CollectionState: Equatable {
         expandMaxCount: Int
     ) -> CollectionState {
         let amounts = Dictionary(
-            uniqueKeysWithValues: results.map { ($0.groupID, $0.amountPerPerson) }
+            results.map { ($0.groupID, $0.amountPerPerson) },
+            uniquingKeysWith: { _, last in last }
         )
         let seats = groups.flatMap { group in
             CollectionSeat.make(

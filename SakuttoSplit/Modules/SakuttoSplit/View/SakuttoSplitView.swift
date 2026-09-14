@@ -131,6 +131,14 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 break
             }
         }
+        .onChange(of: presenter.sessionChrome.needsSaveMemberSetNamePrompt) { _, needsPrompt in
+            guard needsPrompt else { return }
+            presentSaveNamePrompt()
+            presenter.didConsumeSaveMemberSetNamePrompt()
+        }
+        .onDisappear {
+            memberSetUndoBannerHideTask?.cancel()
+        }
         .alert(
             "session.restore_confirm_title",
             isPresented: $isRestoreConfirmPresented
@@ -263,13 +271,12 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         guard let rootViewController = rootViewControllerBox.rootViewController else {
             return
         }
+        let presenter = self.presenter
         adsController.presentRewarded(
             from: rootViewController,
             purpose: .extraMemberSetSlot
         ) {
             presenter.didUnlockMemberSetSlot()
-            guard presenter.sessionChrome.hasEmptyMemberSetSlot else { return }
-            presentSaveNamePrompt()
         }
     }
 

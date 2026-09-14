@@ -52,4 +52,25 @@ final class AttendeeGroupDraftTests: XCTestCase {
         let draft = AttendeeGroupDraft(name: "全員", countText: "4", ratioText: "")
         XCTAssertEqual(draft.toDomain().ratio, 0)
     }
+
+    func testToDomain_DotOnlyRatioText_BecomesZero() {
+        let draft = AttendeeGroupDraft(name: "全員", countText: "4", ratioText: ".")
+        XCTAssertEqual(draft.toDomain().ratio, 0)
+    }
+
+    /// 長い 9 列は Double が inf。非有限はドメイン値 0（Decimal(inf) で trap しない）
+    func testToDomain_NonFiniteRatioText_BecomesZero() {
+        let longNines = AttendeeGroupDraft(
+            name: "全員",
+            countText: "4",
+            ratioText: String(repeating: "9", count: 400)
+        )
+        XCTAssertEqual(longNines.toDomain().ratio, 0)
+
+        let infText = AttendeeGroupDraft(name: "全員", countText: "4", ratioText: "inf")
+        XCTAssertEqual(infText.toDomain().ratio, 0)
+
+        let nanText = AttendeeGroupDraft(name: "全員", countText: "4", ratioText: "nan")
+        XCTAssertEqual(nanText.toDomain().ratio, 0)
+    }
 }

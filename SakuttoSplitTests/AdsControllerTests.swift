@@ -155,6 +155,7 @@ final class AdsControllerTests: XCTestCase {
         XCTAssertFalse(controller.isAdFree)
 
         rewarded.onDidEarnReward?()
+        await flushAdsCallback()
 
         XCTAssertTrue(controller.isAdFree)
         XCTAssertFalse(controller.canRequestRewarded)
@@ -173,6 +174,7 @@ final class AdsControllerTests: XCTestCase {
 
         controller.didTapHideAdsForToday(from: UIViewController())
         rewarded.onDidFinish?()
+        await flushAdsCallback()
         await controller.rewardedDidFinish()
 
         XCTAssertFalse(controller.isAdFree)
@@ -191,6 +193,7 @@ final class AdsControllerTests: XCTestCase {
             onEarnedCount += 1
         }
         rewarded.onDidEarnReward?()
+        await flushAdsCallback()
 
         XCTAssertEqual(onEarnedCount, 0)
         XCTAssertTrue(controller.isAdFree)
@@ -207,6 +210,7 @@ final class AdsControllerTests: XCTestCase {
             onEarnedCount += 1
         }
         rewarded.onDidEarnReward?()
+        await flushAdsCallback()
 
         XCTAssertEqual(rewarded.presentCallCount, 1)
         XCTAssertEqual(onEarnedCount, 1)
@@ -225,6 +229,7 @@ final class AdsControllerTests: XCTestCase {
             onEarnedCount += 1
         }
         rewarded.onDidFinish?()
+        await flushAdsCallback()
         await controller.rewardedDidFinish()
 
         XCTAssertEqual(onEarnedCount, 0)
@@ -253,6 +258,7 @@ final class AdsControllerTests: XCTestCase {
             onEarnedCount += 1
         }
         rewarded.onDidEarnReward?()
+        await flushAdsCallback()
 
         XCTAssertEqual(rewarded.presentCallCount, 1)
         XCTAssertEqual(onEarnedCount, 1)
@@ -326,6 +332,7 @@ final class AdsControllerTests: XCTestCase {
         await controller.startLoadingIfNeeded()
         controller.didTapHideAdsForToday(from: UIViewController())
         rewarded.onDidEarnReward?()
+        await flushAdsCallback()
         XCTAssertTrue(controller.isAdFree)
         XCTAssertEqual(AdBannerSlot.height(isFocused: false, isAdFree: controller.isAdFree), 0)
 
@@ -356,6 +363,11 @@ final class AdsControllerTests: XCTestCase {
             now: { start.addingTimeInterval(elapsed) },
             startDate: start
         )
+    }
+
+    /// SDK コールバックは MainActor Task に載る。テストの同期呼び出しのあと 1 ホップ待つ
+    private func flushAdsCallback() async {
+        await Task { @MainActor in }.value
     }
 }
 

@@ -15,17 +15,14 @@ struct CollectionSection: View {
     let isUnpaidShareEnabled: Bool
     var onToggle: (CollectionSeatID) -> Void
     var onMarkGroupPaid: (UUID) -> Void
-
-    private var unpaidCount: Int {
-        seats.filter { !$0.isPaid }.count
-    }
-
-    private var paidFraction: Double {
-        guard !seats.isEmpty else { return 0 }
-        return Double(seats.count - unpaidCount) / Double(seats.count)
-    }
+    @State private var haptics = CollectionHaptics()
 
     var body: some View {
+        let unpaidCount = seats.reduce(into: 0) { count, seat in
+            if !seat.isPaid { count += 1 }
+        }
+        let paidFraction = seats.isEmpty ? 0.0 : Double(seats.count - unpaidCount) / Double(seats.count)
+
         ForEach(seatGroups) { group in
             ForEach(group.seats) { seat in
                 CollectionSeatRow(seat: seat) {
@@ -40,13 +37,13 @@ struct CollectionSection: View {
             }
         }
 
-        progressRow
+        progressRow(unpaidCount: unpaidCount, paidFraction: paidFraction)
 
         UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
     }
 
     @ViewBuilder
-    private var progressRow: some View {
+    private func progressRow(unpaidCount: Int, paidFraction: Double) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             ProgressView(value: paidFraction)
             if unpaidCount == 0 {
@@ -62,13 +59,10 @@ struct CollectionSection: View {
     }
 
     private var seatGroups: [SeatGroup] {
-        var order: [UUID] = []
-        var grouped: [UUID: [CollectionSeat]] = [:]
-        for seat in seats {
-            if grouped[seat.id.groupID] == nil {
-                order.append(seat.id.groupID)
-            }
-            grouped[seat.id.groupID, default: []].append(seat)
+        let grouped = Dictionary(grouping: seats, by: \.id.groupID)
+        var seen = Set<UUID>()
+        let order = seats.compactMap { seat -> UUID? in
+            seen.insert(seat.id.groupID).inserted ? seat.id.groupID : nil
         }
         return order.map { SeatGroup(groupID: $0, seats: grouped[$0] ?? []) }
     }
@@ -78,9 +72,9 @@ struct CollectionSection: View {
         let unpaidInGroup = groupSeats.filter { !$0.isPaid }
         let willCompleteGroup = !seat.isPaid && unpaidInGroup.count == 1
         onToggle(seat.id)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        haptics.lightImpact()
         if willCompleteGroup {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            haptics.success()
         }
     }
 
@@ -89,7 +83,7 @@ struct CollectionSection: View {
         let hadUnpaid = groupSeats.contains { !$0.isPaid }
         onMarkGroupPaid(groupID)
         if hadUnpaid {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            haptics.success()
         }
     }
 }
@@ -98,6 +92,22 @@ private struct SeatGroup: Identifiable {
     var id: UUID { groupID }
     let groupID: UUID
     let seats: [CollectionSeat]
+}
+
+/// 画面寿命でハプティクス生成器を再利用する
+private final class CollectionHaptics {
+    private let impact = UIImpactFeedbackGenerator(style: .light)
+    private let notification = UINotificationFeedbackGenerator()
+
+    func lightImpact() {
+        impact.prepare()
+        impact.impactOccurred()
+    }
+
+    func success() {
+        notification.prepare()
+        notification.notificationOccurred(.success)
+    }
 }
 
 /// 席 1 行。チェック・ラベル・1 人あたり金額

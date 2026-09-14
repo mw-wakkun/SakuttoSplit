@@ -45,7 +45,7 @@ struct AttendeeGroupDraft: Identifiable, Equatable, Codable {
     }
 
     private static func parseRatio(_ text: String) -> Decimal {
-        guard let value = Double(text) else { return 0 }
+        guard let value = Double(text), value.isFinite else { return 0 }
         return Decimal(value)
     }
 }

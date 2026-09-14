@@ -43,6 +43,7 @@ struct CountStepper<FocusValue: Hashable>: View {
                 Image(systemName: "plus.circle.fill").font(.title3)
             }
             .buttonStyle(.borderless)
+            .disabled(currentCount >= range.upperBound)
 
             Text(unitLabel)
         }

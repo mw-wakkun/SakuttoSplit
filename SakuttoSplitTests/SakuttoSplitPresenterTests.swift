@@ -153,6 +153,69 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit + 1)
     }
 
+    /// グループ 20 件で追加しても件数と計算回数が増えない
+    func testDidTapAddGroup_WhenAt20_DoesNotAppendOrRecalculate() {
+        var state = SakuttoSplitViewState.initial
+        state.groups = (1...20).map { index in
+            AttendeeGroupDraft(name: "G\(index)", countText: "1", ratioText: "1.0")
+        }
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(
+            interactor: spy,
+            initialState: state,
+            sessionStore: InMemoryBillSessionStore()
+        )
+        let callsBeforeAdd = spy.calculateCallCount
+
+        presenter.didTapAddGroup()
+
+        XCTAssertEqual(presenter.viewState.groups.count, 20)
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeAdd)
+    }
+
+    /// 復元で 20 件超が来たら先頭 20 件を残す
+    func testDidTapRestoreLastBill_MoreThan20Groups_KeepsFirst20() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let groups = (1...21).map { index in
+            AttendeeGroupDraft(name: "G\(index)", countText: "1", ratioText: "1.0")
+        }
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "20000",
+                roundingUnit: .hundred,
+                groups: groups
+            )
+        )
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        presenter.didTapRestoreLastBill()
+
+        XCTAssertEqual(presenter.viewState.groups.count, 20)
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), (1...20).map { "G\($0)" })
+    }
+
+    /// init の initialState でも後続の重複 ID だけ振り直す。先頭は残す
+    func testInit_DuplicateGroupIDs_UniquifiesTrailingOnly() {
+        let sharedID = UUID()
+        var state = SakuttoSplitViewState.initial
+        state.groups = [
+            AttendeeGroupDraft(id: sharedID, name: "A", countText: "1", ratioText: "1.0"),
+            AttendeeGroupDraft(id: sharedID, name: "B", countText: "1", ratioText: "1.0")
+        ]
+        let presenter = SakuttoSplitPresenter(
+            interactor: CalculatingSpyInteractor(),
+            initialState: state,
+            sessionStore: InMemoryBillSessionStore()
+        )
+
+        let ids = presenter.viewState.groups.map(\.id)
+        XCTAssertEqual(ids.count, Set(ids).count)
+        XCTAssertEqual(ids[0], sharedID)
+        XCTAssertNotEqual(ids[1], sharedID)
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), ["A", "B"])
+    }
+
     func testDidTapRemoveGroup_RemovesMatchingGroup_CalculatesOnce() {
         let spy = CalculatingSpyInteractor()
         let presenter = SakuttoSplitPresenter(interactor: spy)
@@ -899,6 +962,10 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.sessionChrome.slotCount, 2)
         XCTAssertTrue(presenter.sessionChrome.hasEmptyMemberSetSlot)
         XCTAssertTrue(presenter.sessionChrome.canUnlockMemberSetSlot)
+        XCTAssertTrue(presenter.sessionChrome.needsSaveMemberSetNamePrompt)
+
+        presenter.didConsumeSaveMemberSetNamePrompt()
+        XCTAssertFalse(presenter.sessionChrome.needsSaveMemberSetNamePrompt)
 
         presenter.didTapSaveMemberSet(name: "2件目")
 
@@ -917,6 +984,7 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(store.slotCount, 3)
         XCTAssertEqual(presenter.sessionChrome.slotCount, 3)
         XCTAssertFalse(presenter.sessionChrome.canUnlockMemberSetSlot)
+        XCTAssertFalse(presenter.sessionChrome.needsSaveMemberSetNamePrompt)
     }
 
     func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeExistingLastBill() {

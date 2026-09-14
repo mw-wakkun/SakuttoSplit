@@ -22,38 +22,36 @@ enum ShareTextBuilder {
         results: [GroupCalculationResult],
         difference: Int
     ) -> String {
-        var text = "本日のお会計\n"
-        text += totalLine(totalAmountText)
-        text += "----------------\n"
-
-        for result in results {
-            text += personLine(label: result.name, amountPerPerson: result.amountPerPerson)
-        }
-
-        text += "----------------\n"
         let differenceLabel = difference >= 0 ? "余剰" : "不足"
-        text += "\(differenceLabel)  \(YenFormatting.grouped(abs(difference)))円\n"
-        text += transferRequestLine
-
-        return text
+        let personLines = results.map {
+            personLine(label: $0.name, amountPerPerson: $0.amountPerPerson)
+        }
+        return [
+            "本日のお会計\n",
+            totalLine(totalAmountText),
+            "----------------\n",
+            personLines.joined(),
+            "----------------\n",
+            "\(differenceLabel)  \(YenFormatting.grouped(abs(difference)))円\n",
+            transferRequestLine
+        ].joined()
     }
 
     /// 未払い席だけの再シェア文。全員済・席なしは空文字
     static func buildUnpaid(totalAmountText: String, unpaidSeats: [CollectionSeat]) -> String {
         guard !unpaidSeats.isEmpty else { return "" }
 
-        var text = "未払いのお願い\n"
-        text += totalLine(totalAmountText)
-        text += "----------------\n"
-
-        for seat in unpaidSeats {
-            text += personLine(label: seat.label, amountPerPerson: seat.amountPerPerson)
+        let personLines = unpaidSeats.map {
+            personLine(label: $0.label, amountPerPerson: $0.amountPerPerson)
         }
-
-        text += "----------------\n"
-        text += transferRequestLine
-
-        return text
+        return [
+            "未払いのお願い\n",
+            totalLine(totalAmountText),
+            "----------------\n",
+            personLines.joined(),
+            "----------------\n",
+            transferRequestLine
+        ].joined()
     }
 
     private static let transferRequestLine = "PayPay等で送金をお願いします"

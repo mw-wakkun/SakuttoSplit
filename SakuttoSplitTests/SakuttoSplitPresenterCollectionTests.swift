@@ -299,6 +299,89 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         XCTAssertEqual(presenter.collectionState.paidSeatKeys, [paidID.rawValue])
     }
 
+    /// 同 ID の 2 グループを restore すると後続だけ新しい UUID になる。先頭の済は残る
+    func testDidTapRestoreLastBill_DuplicateGroupIDs_BecomeUnique_KeepsFirstPaid() {
+        let sharedID = UUID()
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let paidKey = CollectionSeatID(groupID: sharedID, index: 0).rawValue
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "20000",
+                roundingUnit: .hundred,
+                groups: [
+                    AttendeeGroupDraft(
+                        id: sharedID,
+                        name: "A",
+                        countText: "1",
+                        mode: .ratio,
+                        ratioText: "1.0"
+                    ),
+                    AttendeeGroupDraft(
+                        id: sharedID,
+                        name: "B",
+                        countText: "1",
+                        mode: .ratio,
+                        ratioText: "1.0"
+                    )
+                ],
+                paidSeatKeys: [paidKey]
+            )
+        )
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        presenter.didTapRestoreLastBill()
+
+        let ids = presenter.viewState.groups.map(\.id)
+        XCTAssertEqual(ids.count, 2)
+        XCTAssertEqual(Set(ids).count, 2)
+        XCTAssertEqual(ids[0], sharedID)
+        XCTAssertNotEqual(ids[1], sharedID)
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), ["A", "B"])
+        XCTAssertEqual(presenter.collectionState.seats.map(\.isPaid), [true, false])
+        XCTAssertEqual(presenter.collectionState.paidSeatKeys, [paidKey])
+    }
+
+    /// 編成適用でも同 ID は分かれる。席は未払いのまま
+    func testDidTapApplyMemberSet_DuplicateGroupIDs_BecomeUnique() {
+        let sharedID = UUID()
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("20000")
+        let memberSet = MemberSet(
+            name: "重複",
+            roundingUnit: .hundred,
+            groups: [
+                AttendeeGroupDraft(
+                    id: sharedID,
+                    name: "A",
+                    countText: "1",
+                    mode: .ratio,
+                    ratioText: "1.0"
+                ),
+                AttendeeGroupDraft(
+                    id: sharedID,
+                    name: "B",
+                    countText: "1",
+                    mode: .ratio,
+                    ratioText: "1.0"
+                )
+            ]
+        )
+        XCTAssertTrue(store.saveMemberSet(memberSet))
+
+        presenter.didTapApplyMemberSet(id: memberSet.id)
+
+        let ids = presenter.viewState.groups.map(\.id)
+        XCTAssertEqual(ids.count, 2)
+        XCTAssertEqual(Set(ids).count, 2)
+        XCTAssertEqual(ids[0], sharedID)
+        XCTAssertNotEqual(ids[1], sharedID)
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), ["A", "B"])
+        XCTAssertTrue(presenter.collectionState.seats.allSatisfy { !$0.isPaid })
+    }
+
     func testDidTapApplyMemberSet_ClearsPaidEvenWhenGroupIDsMatch() {
         let setup = makeValidDefaultPresenter()
         let presenter = setup.presenter

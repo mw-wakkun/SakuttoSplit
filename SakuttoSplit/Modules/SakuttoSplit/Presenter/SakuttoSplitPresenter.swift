@@ -18,17 +18,12 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     private let interactor: SakuttoSplitInteractorProtocol
     private let sessionStore: any BillSessionStoring
+    private var cachedUnpaidShareText = ""
+    private var cachedIsUnpaidShareEnabled = false
 
-    var unpaidShareText: String {
-        ShareTextBuilder.buildUnpaid(
-            totalAmountText: viewState.totalAmountText,
-            unpaidSeats: collectionState.unpaidSeats
-        )
-    }
+    var unpaidShareText: String { cachedUnpaidShareText }
 
-    var isUnpaidShareEnabled: Bool {
-        viewState.isShareEnabled && !collectionState.unpaidSeats.isEmpty
-    }
+    var isUnpaidShareEnabled: Bool { cachedIsUnpaidShareEnabled }
 
     var needsRestoreConfirmation: Bool {
         guard let lastBill = sessionStore.lastBill else { return false }
@@ -70,10 +65,15 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         self.interactor = interactor
         self.sessionStore = sessionStore
         var state = initialState
+        state.groups = Self.normalizingGroups(state.groups)
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
-        self.sessionChrome = makeSessionChrome(isMemberSetSheetPresented: false)
+        self.sessionChrome = makeSessionChrome(
+            isMemberSetSheetPresented: false,
+            needsSaveMemberSetNamePrompt: false
+        )
         reconcileCollection()
+        refreshUnpaidShareCache()
     }
 
     func didChangeTotalAmount(_ text: String) {
@@ -121,6 +121,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     func didTapAddGroup() {
         applyUpdate { state in
+            guard state.groups.count < InputLimits.groupMaxCount else { return }
             let newGroupName = String(localized: "group.new_name \(state.groups.count + 1)")
             state.groups.append(
                 AttendeeGroupDraft(name: newGroupName, countText: "1", mode: .ratio, ratioText: "1.0")
@@ -149,12 +150,11 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     /// 前回会計を入力へ流し込み、計算は 1 回。済はスナップショットから載せ直す
     func didTapRestoreLastBill() {
         guard let snapshot = sessionStore.lastBill else { return }
-        applyUpdate { state in
+        applyUpdate(paidSeatKeys: Set(snapshot.paidSeatKeys)) { state in
             state.totalAmountText = snapshot.totalAmountText
             state.roundingUnit = snapshot.roundingUnit
             state.groups = snapshot.groups
         }
-        reconcileCollection(paidSeatKeys: Set(snapshot.paidSeatKeys))
     }
 
     /// その席の済/未済だけ反転する。applyUpdate は呼ばない
@@ -162,7 +162,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         var next = collectionState
         guard let index = next.seats.firstIndex(where: { $0.id == id }) else { return }
         next.seats[index].isPaid.toggle()
-        collectionState = next
+        setCollectionState(next)
     }
 
     /// そのグループの席をすべて済にする。計算しない。すでに全員済なら何もしない
@@ -174,7 +174,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         for index in indices {
             next.seats[index].isPaid = true
         }
-        collectionState = next
+        setCollectionState(next)
     }
 
     /// 空き枠があるときだけ編成を保存する。総額は持たない。計算は走らせない
@@ -205,11 +205,10 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     func didTapApplyMemberSet(id: UUID) {
         guard let memberSet = sessionStore.memberSets.first(where: { $0.id == id }) else { return }
         let undo = MemberSetUndo(groups: viewState.groups, roundingUnit: viewState.roundingUnit)
-        applyUpdate { state in
+        applyUpdate(paidSeatKeys: []) { state in
             state.roundingUnit = memberSet.roundingUnit
             state.groups = memberSet.groups
         }
-        reconcileCollection(paidSeatKeys: [])
         setMemberSetSheetPresented(false)
         memberSetUndo = undo
     }
@@ -217,11 +216,10 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     /// 直前の編成適用を取り消す。総額は維持。席は作り直し。Undo が無ければ何もしない
     func didTapUndoMemberSetApply() {
         guard let undo = memberSetUndo else { return }
-        applyUpdate { state in
+        applyUpdate(paidSeatKeys: []) { state in
             state.roundingUnit = undo.roundingUnit
             state.groups = undo.groups
         }
-        reconcileCollection(paidSeatKeys: [])
     }
 
     func didTapDeleteMemberSet(id: UUID) {
@@ -232,7 +230,19 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     /// リワード完了時だけ枠を 1 つ増やす。既に上限なら何もしない
     func didUnlockMemberSetSlot() {
         guard sessionStore.unlockExtraSlot() else { return }
-        refreshSessionChrome()
+        var next = makeSessionChrome(
+            isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented,
+            needsSaveMemberSetNamePrompt: false
+        )
+        if next.hasEmptyMemberSetSlot {
+            next.needsSaveMemberSetNamePrompt = true
+        }
+        sessionChrome = next
+    }
+
+    func didConsumeSaveMemberSetNamePrompt() {
+        guard sessionChrome.needsSaveMemberSetNamePrompt else { return }
+        sessionChrome.needsSaveMemberSetNamePrompt = false
     }
 
     private func saveLastBillIfValid() {
@@ -242,7 +252,10 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     }
 
     private func refreshSessionChrome() {
-        let next = makeSessionChrome(isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented)
+        let next = makeSessionChrome(
+            isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented,
+            needsSaveMemberSetNamePrompt: sessionChrome.needsSaveMemberSetNamePrompt
+        )
         guard next != sessionChrome else { return }
         sessionChrome = next
     }
@@ -252,13 +265,18 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         sessionChrome.isMemberSetSheetPresented = presented
     }
 
-    private func makeSessionChrome(isMemberSetSheetPresented: Bool) -> SakuttoSplitSessionChrome {
-        SakuttoSplitSessionChrome(
-            hasLastBill: sessionStore.lastBill != nil,
-            lastBillPreview: Self.makeLastBillPreview(from: sessionStore.lastBill),
+    private func makeSessionChrome(
+        isMemberSetSheetPresented: Bool,
+        needsSaveMemberSetNamePrompt: Bool
+    ) -> SakuttoSplitSessionChrome {
+        let lastBill = sessionStore.lastBill
+        return SakuttoSplitSessionChrome(
+            hasLastBill: lastBill != nil,
+            lastBillPreview: Self.makeLastBillPreview(from: lastBill),
             memberSets: sessionStore.memberSets,
             slotCount: sessionStore.slotCount,
-            isMemberSetSheetPresented: isMemberSetSheetPresented
+            isMemberSetSheetPresented: isMemberSetSheetPresented,
+            needsSaveMemberSetNamePrompt: needsSaveMemberSetNamePrompt
         )
     }
 
@@ -306,7 +324,20 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
             next = .empty
         }
         guard next != collectionState else { return }
+        setCollectionState(next)
+    }
+
+    private func setCollectionState(_ next: CollectionState) {
         collectionState = next
+        refreshUnpaidShareCache()
+    }
+
+    private func refreshUnpaidShareCache() {
+        cachedUnpaidShareText = ShareTextBuilder.buildUnpaid(
+            totalAmountText: viewState.totalAmountText,
+            unpaidSeats: collectionState.unpaidSeats
+        )
+        cachedIsUnpaidShareEnabled = viewState.isShareEnabled && !collectionState.unpaidSeats.isEmpty
     }
 
     private static func matchesInitialInput(_ state: SakuttoSplitViewState) -> Bool {
@@ -320,15 +351,49 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         [group.name, group.countText, "\(group.mode)", group.fixedAmountText, group.ratioText]
     }
 
-    /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える
-    private func applyUpdate(_ update: (inout SakuttoSplitViewState) -> Void) {
+    /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える。
+    /// paidSeatKeys が .some なら、入力が同じでも席の済だけ 1 回 reconcile する
+    private func applyUpdate(
+        paidSeatKeys: Set<String>? = nil,
+        _ update: (inout SakuttoSplitViewState) -> Void
+    ) {
         var next = viewState
         update(&next)
-        guard next != viewState else { return }
-        memberSetUndo = nil
-        Self.applyCalculation(to: &next, interactor: interactor)
-        viewState = next
-        reconcileCollection()
+        next.groups = Self.normalizingGroups(next.groups)
+        let inputChanged = next != viewState
+        guard inputChanged || paidSeatKeys != nil else { return }
+        if inputChanged {
+            memberSetUndo = nil
+            Self.applyCalculation(to: &next, interactor: interactor)
+            viewState = next
+        }
+        reconcileCollection(paidSeatKeys: paidSeatKeys)
+        refreshUnpaidShareCache()
+    }
+
+    /// 上限で切り、後続の重複 ID だけ振り直す。重複も超過も無ければ入力と ==
+    private static func normalizingGroups(_ groups: [AttendeeGroupDraft]) -> [AttendeeGroupDraft] {
+        uniquifyingGroupIDs(Array(groups.prefix(InputLimits.groupMaxCount)))
+    }
+
+    /// 後続の重複 ID だけ振り直す。重複が無ければ入力と ==
+    private static func uniquifyingGroupIDs(_ groups: [AttendeeGroupDraft]) -> [AttendeeGroupDraft] {
+        var seen = Set<UUID>()
+        return groups.map { group in
+            if seen.insert(group.id).inserted {
+                return group
+            }
+            let replacement = AttendeeGroupDraft(
+                id: UUID(),
+                name: group.name,
+                countText: group.countText,
+                mode: group.mode,
+                fixedAmountText: group.fixedAmountText,
+                ratioText: group.ratioText
+            )
+            seen.insert(replacement.id)
+            return replacement
+        }
     }
 
     private static func applyCalculation(

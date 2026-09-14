@@ -115,4 +115,33 @@ final class CollectionSeatTests: XCTestCase {
 
         XCTAssertEqual(seats.map(\.isPaid), [false, true, false, false])
     }
+
+    /// 同 groupID の results が 2 件でも trap せず、後勝ちの金額を使う
+    func testReconcile_DuplicateResultGroupIDs_DoesNotTrap_UsesLastAmount() {
+        let groupID = UUID()
+        let groups = [
+            AttendeeGroupDraft(
+                id: groupID,
+                name: "一般",
+                countText: "2",
+                mode: .ratio,
+                ratioText: "1.0"
+            )
+        ]
+        let results = [
+            GroupCalculationResult(groupID: groupID, name: "一般", amountPerPerson: 1000, total: 2000),
+            GroupCalculationResult(groupID: groupID, name: "一般", amountPerPerson: 2500, total: 5000)
+        ]
+
+        let state = CollectionState.reconcile(
+            groups: groups,
+            results: results,
+            paidSeatKeys: [],
+            expandMaxCount: InputLimits.collectionExpandMaxCount
+        )
+
+        XCTAssertEqual(state.seats.count, 2)
+        XCTAssertTrue(state.seats.allSatisfy { $0.amountPerPerson == 2500 })
+        XCTAssertEqual(state.seats.map(\.id.groupID), [groupID, groupID])
+    }
 }

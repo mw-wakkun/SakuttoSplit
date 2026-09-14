@@ -29,7 +29,19 @@ final class InputLimitsTests: XCTestCase {
         XCTAssertEqual(InputLimits.sanitizedRatioText("."), ".")
     }
 
+    /// 整数 3 桁・小数 2 桁。空と "." はそのまま。400 桁の 9 も 999 に切る
+    func testSanitizedRatioText_CapsIntegerAndFractionDigits() {
+        XCTAssertEqual(InputLimits.sanitizedRatioText("1.25"), "1.25")
+        XCTAssertEqual(InputLimits.sanitizedRatioText("1.2.5"), "1.25")
+        XCTAssertEqual(InputLimits.sanitizedRatioText("."), ".")
+        XCTAssertEqual(InputLimits.sanitizedRatioText(""), "")
+        XCTAssertEqual(InputLimits.sanitizedRatioText("1234.567"), "123.56")
+        XCTAssertEqual(InputLimits.sanitizedRatioText("9999"), "999")
+        XCTAssertEqual(InputLimits.sanitizedRatioText(String(repeating: "9", count: 400)), "999")
+    }
+
     func testCollectionExpandMaxCount_Is20() {
         XCTAssertEqual(InputLimits.collectionExpandMaxCount, 20)
+        XCTAssertEqual(InputLimits.groupMaxCount, 20)
     }
 }

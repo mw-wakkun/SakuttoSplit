@@ -43,6 +43,7 @@ struct GroupListSection: View {
         Button(action: onAdd) {
             Label("group.add", systemImage: "plus.circle.fill")
         }
+        .disabled(groups.count >= InputLimits.groupMaxCount)
     }
 }
 

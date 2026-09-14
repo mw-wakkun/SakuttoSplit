@@ -49,6 +49,8 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapUndoMemberSetApply()
     func didTapDeleteMemberSet(id: UUID)
     func didUnlockMemberSetSlot()
+    /// 保存名 Alert を出したあと、chrome のフラグを下ろす
+    func didConsumeSaveMemberSetNamePrompt()
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする
