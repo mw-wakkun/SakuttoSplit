@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 計算結果の値だけを受ける。入力中の TextField とは切り離す
 struct CalculationResultSection: View {
     let results: [GroupCalculationResult]
     let difference: Int
@@ -14,18 +15,30 @@ struct CalculationResultSection: View {
 
     var body: some View {
         ForEach(results) { result in
-            HStack {
-                Text(result.name)
-                Spacer()
-                VStack(alignment: .trailing) {
-                    Text("result.per_person \(result.amountPerPerson)").bold()
-                    Text("result.group_total \(result.total)").font(.caption).foregroundColor(.secondary)
-                }
-            }
+            ResultRow(result: result)
+                .equatable()
         }
 
         DifferenceRow(difference: difference)
+            .equatable()
+
+        // ShareLink + listRowBackground は EquatableView に包むと行背景が落ち、白文字が見えなくなる
         ShareResultButton(shareText: shareText)
+    }
+}
+
+struct ResultRow: View, Equatable {
+    let result: GroupCalculationResult
+
+    var body: some View {
+        HStack {
+            Text(result.name)
+            Spacer()
+            VStack(alignment: .trailing) {
+                Text("result.per_person \(result.amountPerPerson)").bold()
+                Text("result.group_total \(result.total)").font(.caption).foregroundColor(.secondary)
+            }
+        }
     }
 }
 

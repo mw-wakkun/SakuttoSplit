@@ -9,27 +9,28 @@ import SwiftUI
 
 struct GroupListSection: View {
     let groups: [AttendeeGroupDraft]
-    var nameBinding: (UUID) -> Binding<String>
-    var countBinding: (UUID) -> Binding<String>
-    var modeBinding: (UUID) -> Binding<PaymentMode>
-    var fixedAmountBinding: (UUID) -> Binding<String>
-    var ratioBinding: (UUID) -> Binding<String>
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
+    var onNameChange: (UUID, String) -> Void
+    var onCountChange: (UUID, String) -> Void
+    var onModeChange: (UUID, PaymentMode) -> Void
+    var onFixedAmountChange: (UUID, String) -> Void
+    var onRatioChange: (UUID, String) -> Void
     var onAdd: () -> Void
     var onRemove: (UUID) -> Void
 
     var body: some View {
         ForEach(groups) { group in
             GroupRowView(
-                groupID: group.id,
-                name: nameBinding(group.id),
-                countText: countBinding(group.id),
-                mode: modeBinding(group.id),
-                fixedAmountText: fixedAmountBinding(group.id),
-                ratioText: ratioBinding(group.id),
+                group: group,
                 focusedField: focusedField,
+                onNameChange: { onNameChange(group.id, $0) },
+                onCountChange: { onCountChange(group.id, $0) },
+                onModeChange: { onModeChange(group.id, $0) },
+                onFixedAmountChange: { onFixedAmountChange(group.id, $0) },
+                onRatioChange: { onRatioChange(group.id, $0) },
                 onRemove: { onRemove(group.id) }
             )
+            .equatable()
         }
 
         Button(action: onAdd) {
@@ -53,12 +54,12 @@ private struct GroupListSectionPreview: View {
         Form {
             GroupListSection(
                 groups: groups,
-                nameBinding: binding(\.name),
-                countBinding: binding(\.countText),
-                modeBinding: binding(\.mode),
-                fixedAmountBinding: binding(\.fixedAmountText),
-                ratioBinding: binding(\.ratioText),
                 focusedField: $focusedField,
+                onNameChange: { update($0, \.name, $1) },
+                onCountChange: { update($0, \.countText, $1) },
+                onModeChange: { update($0, \.mode, $1) },
+                onFixedAmountChange: { update($0, \.fixedAmountText, $1) },
+                onRatioChange: { update($0, \.ratioText, $1) },
                 onAdd: {
                     groups.append(
                         AttendeeGroupDraft(name: "新規グループ\(groups.count + 1)", countText: "1")
@@ -71,18 +72,12 @@ private struct GroupListSectionPreview: View {
         }
     }
 
-    private func binding<Value>(_ keyPath: WritableKeyPath<AttendeeGroupDraft, Value>) -> (UUID) -> Binding<Value> {
-        { id in
-            Binding(
-                get: {
-                    groups.first(where: { $0.id == id })?[keyPath: keyPath]
-                        ?? AttendeeGroupDraft(name: "", countText: "1")[keyPath: keyPath]
-                },
-                set: { newValue in
-                    guard let index = groups.firstIndex(where: { $0.id == id }) else { return }
-                    groups[index][keyPath: keyPath] = newValue
-                }
-            )
-        }
+    private func update<Value>(
+        _ id: UUID,
+        _ keyPath: WritableKeyPath<AttendeeGroupDraft, Value>,
+        _ value: Value
+    ) {
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { return }
+        groups[index][keyPath: keyPath] = value
     }
 }

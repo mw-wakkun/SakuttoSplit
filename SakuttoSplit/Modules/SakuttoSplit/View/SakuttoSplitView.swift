@@ -26,12 +26,12 @@ struct SakuttoSplitView: View {
                     Section("section.groups") {
                         GroupListSection(
                             groups: presenter.viewState.groups,
-                            nameBinding: nameBinding,
-                            countBinding: countBinding,
-                            modeBinding: paymentModeBinding,
-                            fixedAmountBinding: fixedAmountBinding,
-                            ratioBinding: ratioBinding,
                             focusedField: $focusedField,
+                            onNameChange: { presenter.didChangeGroupName(id: $0, name: $1) },
+                            onCountChange: { presenter.didChangeGroupCount(id: $0, countText: $1) },
+                            onModeChange: { presenter.didChangePaymentMode(id: $0, mode: $1) },
+                            onFixedAmountChange: { presenter.didChangeFixedAmount(id: $0, text: $1) },
+                            onRatioChange: { presenter.didChangeRatio(id: $0, text: $1) },
                             onAdd: { presenter.didTapAddGroup() },
                             onRemove: { presenter.didTapRemoveGroup(id: $0) }
                         )
@@ -57,6 +57,7 @@ struct SakuttoSplitView: View {
             }
 
             AdBannerView(adUnitID: bannerAdUnitID)
+                .equatable()
                 .frame(height: 50)
         }
     }
@@ -77,41 +78,6 @@ private extension SakuttoSplitView {
         Binding(
             get: { presenter.viewState.roundingUnit },
             set: { presenter.didChangeRoundingUnit($0) }
-        )
-    }
-
-    func nameBinding(for id: UUID) -> Binding<String> {
-        Binding(
-            get: { presenter.viewState.groups.first(where: { $0.id == id })?.name ?? "" },
-            set: { presenter.didChangeGroupName(id: id, name: $0) }
-        )
-    }
-
-    func countBinding(for id: UUID) -> Binding<String> {
-        Binding(
-            get: { presenter.viewState.groups.first(where: { $0.id == id })?.countText ?? "" },
-            set: { presenter.didChangeGroupCount(id: id, countText: $0) }
-        )
-    }
-
-    func paymentModeBinding(for id: UUID) -> Binding<PaymentMode> {
-        Binding(
-            get: { presenter.viewState.groups.first(where: { $0.id == id })?.mode ?? .ratio },
-            set: { presenter.didChangePaymentMode(id: id, mode: $0) }
-        )
-    }
-
-    func fixedAmountBinding(for id: UUID) -> Binding<String> {
-        Binding(
-            get: { presenter.viewState.groups.first(where: { $0.id == id })?.fixedAmountText ?? "" },
-            set: { presenter.didChangeFixedAmount(id: id, text: $0) }
-        )
-    }
-
-    func ratioBinding(for id: UUID) -> Binding<String> {
-        Binding(
-            get: { presenter.viewState.groups.first(where: { $0.id == id })?.ratioText ?? "" },
-            set: { presenter.didChangeRatio(id: id, text: $0) }
         )
     }
 }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ShareResultButton: View {
+struct ShareResultButton: View, Equatable {
     let shareText: String
 
     var body: some View {

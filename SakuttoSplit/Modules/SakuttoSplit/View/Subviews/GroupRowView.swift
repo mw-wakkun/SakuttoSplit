@@ -7,27 +7,28 @@
 
 import SwiftUI
 
+/// グループ 1 行。`group` が等しいときだけ `body` を再評価する
 struct GroupRowView: View {
-    let groupID: UUID
-    @Binding var name: String
-    @Binding var countText: String
-    @Binding var mode: PaymentMode
-    @Binding var fixedAmountText: String
-    @Binding var ratioText: String
+    let group: AttendeeGroupDraft
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
+    var onNameChange: (String) -> Void
+    var onCountChange: (String) -> Void
+    var onModeChange: (PaymentMode) -> Void
+    var onFixedAmountChange: (String) -> Void
+    var onRatioChange: (String) -> Void
     var onRemove: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                TextField("group.name_placeholder", text: $name)
+                TextField("group.name_placeholder", text: nameBinding)
                     .textFieldStyle(.roundedBorder)
-                    .focused(focusedField, equals: .groupName(groupID))
+                    .focused(focusedField, equals: .groupName(group.id))
 
                 CountStepper(
-                    text: $countText,
+                    text: countBinding,
                     focusedField: focusedField,
-                    focusValue: .groupCount(groupID)
+                    focusValue: .groupCount(group.id)
                 )
 
                 Button(role: .destructive, action: onRemove) {
@@ -37,7 +38,7 @@ struct GroupRowView: View {
             }
 
             HStack {
-                Picker("group.mode", selection: $mode) {
+                Picker("group.mode", selection: modeBinding) {
                     Text("payment_mode.ratio").tag(PaymentMode.ratio)
                     Text("payment_mode.fixed").tag(PaymentMode.fixed)
                 }
@@ -52,13 +53,13 @@ struct GroupRowView: View {
     @ViewBuilder
     private var detailInputField: some View {
         HStack {
-            if mode == .fixed {
+            if group.mode == .fixed {
                 BoundedIntegerField(
-                    text: $fixedAmountText,
+                    text: fixedAmountBinding,
                     placeholder: "group.fixed_amount_placeholder",
                     maxDigits: InputLimits.totalAmountMaxDigits,
                     focusedField: focusedField,
-                    focusValue: .fixedAmount(groupID)
+                    focusValue: .fixedAmount(group.id)
                 )
                 .textFieldStyle(.roundedBorder)
                 Text("unit.yen")
@@ -66,17 +67,40 @@ struct GroupRowView: View {
                 TextField("group.ratio_placeholder", text: ratioBinding)
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.roundedBorder)
-                    .focused(focusedField, equals: .ratio(groupID))
+                    .focused(focusedField, equals: .ratio(group.id))
                 Text("unit.times")
             }
         }
     }
 
+    private var nameBinding: Binding<String> {
+        Binding(get: { group.name }, set: onNameChange)
+    }
+
+    private var countBinding: Binding<String> {
+        Binding(get: { group.countText }, set: onCountChange)
+    }
+
+    private var modeBinding: Binding<PaymentMode> {
+        Binding(get: { group.mode }, set: onModeChange)
+    }
+
+    private var fixedAmountBinding: Binding<String> {
+        Binding(get: { group.fixedAmountText }, set: onFixedAmountChange)
+    }
+
     private var ratioBinding: Binding<String> {
         Binding(
-            get: { ratioText },
-            set: { ratioText = InputLimits.sanitizedRatioText($0) }
+            get: { group.ratioText },
+            set: { onRatioChange(InputLimits.sanitizedRatioText($0)) }
         )
+    }
+}
+
+/// Binding / クロージャは Equatable ではないため、宣言側では合成せず `group` だけ比較する
+extension GroupRowView: Equatable {
+    static func == (lhs: GroupRowView, rhs: GroupRowView) -> Bool {
+        lhs.group == rhs.group
     }
 }
 
@@ -85,25 +109,27 @@ struct GroupRowView: View {
 }
 
 private struct GroupRowViewPreview: View {
-    @State private var name = "部長"
-    @State private var countText = "1"
-    @State private var mode = PaymentMode.fixed
-    @State private var fixedAmountText = "10000"
-    @State private var ratioText = "1.0"
+    @State private var group = AttendeeGroupDraft(
+        name: "部長",
+        countText: "1",
+        isFixed: true,
+        fixedAmountText: "10000"
+    )
     @FocusState private var focusedField: SakuttoSplitFocus?
 
     var body: some View {
         Form {
             GroupRowView(
-                groupID: UUID(),
-                name: $name,
-                countText: $countText,
-                mode: $mode,
-                fixedAmountText: $fixedAmountText,
-                ratioText: $ratioText,
+                group: group,
                 focusedField: $focusedField,
+                onNameChange: { group.name = $0 },
+                onCountChange: { group.countText = $0 },
+                onModeChange: { group.mode = $0 },
+                onFixedAmountChange: { group.fixedAmountText = $0 },
+                onRatioChange: { group.ratioText = $0 },
                 onRemove: {}
             )
+            .equatable()
         }
     }
 }

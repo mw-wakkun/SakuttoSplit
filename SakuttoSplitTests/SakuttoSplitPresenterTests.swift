@@ -172,6 +172,39 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.results.first?.name, "stub")
         XCTAssertEqual(presenter.viewState.difference, -50)
     }
+
+    /// フェーズ 4: 人数 +/- は Intent 1 回 = 計算 1 回
+    func testDidChangeGroupCount_Increment_CalculatesExactlyOnce() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let groupID = presenter.viewState.groups[1].id
+        let current = Int(presenter.viewState.groups[1].countText) ?? 1
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didChangeGroupCount(id: groupID, countText: "\(current + 1)")
+
+        XCTAssertEqual(presenter.viewState.groups[1].countText, "\(current + 1)")
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit + 1)
+    }
+
+    /// フェーズ 4: 同名グループでも結果は groupID で区別できる
+    func testDuplicateGroupNames_ResultsAreIdentifiedByGroupID() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+        let firstID = presenter.viewState.groups[0].id
+        let secondID = presenter.viewState.groups[1].id
+
+        presenter.didChangeGroupName(id: firstID, name: "一般")
+        presenter.didChangePaymentMode(id: firstID, mode: .ratio)
+        presenter.didChangeRatio(id: firstID, text: "1.0")
+        presenter.didChangeGroupCount(id: firstID, countText: "2")
+        presenter.didChangeGroupCount(id: secondID, countText: "2")
+        presenter.didChangeTotalAmount("20000")
+
+        XCTAssertEqual(presenter.viewState.results.map(\.name), ["一般", "一般"])
+        XCTAssertEqual(presenter.viewState.results.map(\.groupID), [firstID, secondID])
+        XCTAssertEqual(presenter.viewState.results.map(\.id), [firstID, secondID])
+        XCTAssertEqual(Set(presenter.viewState.results.map(\.id)).count, 2)
+    }
 }
 
 @MainActor

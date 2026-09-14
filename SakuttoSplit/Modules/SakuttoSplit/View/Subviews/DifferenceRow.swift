@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DifferenceRow: View {
+struct DifferenceRow: View, Equatable {
     let difference: Int
 
     var body: some View {

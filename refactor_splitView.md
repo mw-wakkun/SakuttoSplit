@@ -250,6 +250,15 @@ Presenter は `viewState` だけを `@Published` する。計算のたびに Vie
 
 ## 4. フェーズ別計画
 
+進捗:
+
+- [x] フェーズ 0
+- [x] フェーズ 1
+- [x] フェーズ 2
+- [x] フェーズ 3
+- [x] フェーズ 4
+- [ ] フェーズ 5
+
 実装はまだ行わない。着手するときは **フェーズ 0 → 1 の順** を崩さない。後工程ほど UI 差分が出る。
 
 ### フェーズ 0: 安全網（テストを先に厚くする）
@@ -562,6 +571,19 @@ Contract を 1 ファイルにまとめる理由: 小規模モジュールでは
 
 ## 12. 次のアクション
 
-本計画の承認後、最初に着手するのは **フェーズ 0（現行仕様のテスト固定）** である。プロダクトコードの移動はその後に行う。
+次に着手するのは **フェーズ 5（一貫性・品質の仕上げ）** である。
 
 実装開始時は、このファイルのフェーズ単位で PR を切り、完了したフェーズにチェックを付けること。
+
+---
+
+## 13. 実施記録
+
+### フェーズ 4（パフォーマンス）
+
+- 計算トリガーはフェーズ 2 の `applyUpdate` 1 箇所のまま。Presenter テストで人数 +/- が 1 Intent = 1 計算であることを固定した
+- `GroupRowView` / `ResultRow` / `DifferenceRow` / `ShareResultButton` / `AdBannerView` を `Equatable` にし、`.equatable()` で変わった行だけ再評価する
+- `CalculationResultSection` は `results` / `difference` / `shareText` の値だけを受け、入力中の TextField とは切り離す。`ShareLink` は `.equatable()` で包まない（Form の `listRowBackground` が落ちるため）
+- `AdBannerView` は自身の `window.rootViewController` から root を取り、初回 attach 時だけ `load` する
+- `ForEach(id: \.name)` は残っていない。結果の identity は `GroupCalculationResult.groupID`
+- 入力デバウンスは未導入（計画どおり、現行の純計算では不要）
