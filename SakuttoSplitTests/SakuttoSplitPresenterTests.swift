@@ -349,7 +349,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
     func testDidTapSettleComplete_WhenValid_ResetsToCalculatedInitial() {
         let spy = CalculatingSpyInteractor()
-        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
         presenter.didChangeTotalAmount("35000")
         presenter.didChangeRoundingUnit(.thousand)
         let callsBeforeSettle = spy.calculateCallCount
@@ -358,6 +359,115 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle + 1)
         Self.assertMatchesCalculatedInitial(presenter.viewState)
+    }
+
+    func testDidTapSettleComplete_WhenValid_PersistsLastBillBeforeReset() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didChangeRoundingUnit(.thousand)
+        let groupsBefore = presenter.viewState.groups
+        let callsBeforeSettle = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle + 1)
+        Self.assertMatchesCalculatedInitial(presenter.viewState)
+        XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
+        XCTAssertEqual(store.lastBill?.roundingUnit, .thousand)
+        XCTAssertEqual(store.lastBill?.groups.map(\.id), groupsBefore.map(\.id))
+        XCTAssertEqual(store.lastBill?.groups.map(\.name), groupsBefore.map(\.name))
+        XCTAssertEqual(store.lastBill?.groups.map(\.countText), groupsBefore.map(\.countText))
+    }
+
+    func testDidTapSettleComplete_WhenEmptyTotal_DoesNotChangeExistingLastBill() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let existing = BillSnapshot(
+            totalAmountText: "12000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(name: "残す")]
+        )
+        store.saveLastBill(existing)
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        let before = presenter.viewState
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+        XCTAssertEqual(store.lastBill, existing)
+    }
+
+    func testDidChangeTotalAmount_DoesNotPersistLastBill() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        presenter.didChangeTotalAmount("35000")
+
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertNil(store.lastBill)
+        XCTAssertEqual(store.saveLastBillCallCount, 0)
+    }
+
+    func testDidEnterBackground_WhenValid_SavesLastBillWithoutRecalculating() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        let groupsBefore = presenter.viewState.groups
+        let callsBeforeBackground = spy.calculateCallCount
+
+        presenter.didEnterBackground()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeBackground)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+        XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
+        XCTAssertEqual(store.lastBill?.groups.map(\.id), groupsBefore.map(\.id))
+    }
+
+    func testDidEnterBackground_WhenInvalid_DoesNotOverwriteLastBill() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let existing = BillSnapshot(
+            totalAmountText: "12000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(name: "残す")]
+        )
+        store.saveLastBill(existing)
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        XCTAssertEqual(presenter.viewState.validationIssue, .emptyTotalAmount)
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didEnterBackground()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+        XCTAssertEqual(store.lastBill, existing)
+    }
+
+    func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeExistingLastBill() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let existing = BillSnapshot(
+            totalAmountText: "12000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(name: "残す")]
+        )
+        store.saveLastBill(existing)
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("5000")
+        let before = presenter.viewState
+        let callsBeforeSettle = spy.calculateCallCount
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState.validationIssue, .fixedAmountExceedsTotal)
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBeforeSettle)
+        XCTAssertEqual(store.lastBill, existing)
     }
 
     func testValidation_FixedAmountExceedsTotal_DisablesShare_KeepsCalculation() {

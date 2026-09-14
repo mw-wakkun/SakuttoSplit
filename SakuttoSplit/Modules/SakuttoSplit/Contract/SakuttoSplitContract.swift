@@ -22,6 +22,7 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapAddGroup()
     func didTapRemoveGroup(id: UUID)
     func didTapSettleComplete()
+    func didEnterBackground()
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする

@@ -26,7 +26,10 @@ enum SakuttoSplitRouter {
         adConfiguration: any AdConfigurationProviding
     ) -> SakuttoSplitModule {
         let interactor = SakuttoSplitInteractor()
-        let presenter = SakuttoSplitPresenter(interactor: interactor)
+        let presenter = SakuttoSplitPresenter(
+            interactor: interactor,
+            sessionStore: BillSessionStore()
+        )
         let adsController = AdsController(
             interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
             rewardedAdUnitID: adConfiguration.rewardedAdUnitID

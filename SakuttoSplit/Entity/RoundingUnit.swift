@@ -8,7 +8,7 @@
 import Foundation
 
 /// 割り勘金額の端数処理単位（切り捨て）
-enum RoundingUnit: Int, CaseIterable, Equatable, Sendable {
+enum RoundingUnit: Int, CaseIterable, Equatable, Sendable, Codable {
     case one = 1
     case ten = 10
     case hundred = 100

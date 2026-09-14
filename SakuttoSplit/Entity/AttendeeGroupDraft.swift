@@ -8,7 +8,7 @@
 import Foundation
 
 /// TextField 用の入力途中データ。Interactor には渡さず、ドメインへ変換してから計算する
-struct AttendeeGroupDraft: Identifiable, Equatable {
+struct AttendeeGroupDraft: Identifiable, Equatable, Codable {
     let id: UUID
     var name: String
     var countText: String

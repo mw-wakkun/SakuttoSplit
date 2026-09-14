@@ -15,16 +15,30 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     @Published private(set) var viewState: SakuttoSplitViewState
 
     private let interactor: SakuttoSplitInteractorProtocol
+    private let sessionStore: any BillSessionStoring
 
     convenience init(interactor: SakuttoSplitInteractorProtocol) {
-        self.init(interactor: interactor, initialState: .initial)
+        self.init(
+            interactor: interactor,
+            initialState: .initial,
+            sessionStore: BillSessionStore()
+        )
+    }
+
+    convenience init(
+        interactor: SakuttoSplitInteractorProtocol,
+        sessionStore: any BillSessionStoring
+    ) {
+        self.init(interactor: interactor, initialState: .initial, sessionStore: sessionStore)
     }
 
     init(
         interactor: SakuttoSplitInteractorProtocol,
-        initialState: SakuttoSplitViewState
+        initialState: SakuttoSplitViewState,
+        sessionStore: any BillSessionStoring
     ) {
         self.interactor = interactor
+        self.sessionStore = sessionStore
         var state = initialState
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
@@ -88,10 +102,27 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         }
     }
 
-    /// 精算完了。妥当な入力のときだけ起動時と同じ状態へ戻す。広告は知らない
+    /// 精算完了。妥当なら直前の入力を保存してから起動時と同じ状態へ戻す。広告は知らない
     func didTapSettleComplete() {
         guard viewState.validationIssue == nil else { return }
+        saveLastBillIfValid()
         applyUpdate { $0 = .initial }
+    }
+
+    /// バックグラウンド遷移。妥当な入力のときだけ前回会計を上書きする
+    func didEnterBackground() {
+        saveLastBillIfValid()
+    }
+
+    private func saveLastBillIfValid() {
+        guard viewState.validationIssue == nil else { return }
+        sessionStore.saveLastBill(
+            BillSnapshot(
+                totalAmountText: viewState.totalAmountText,
+                roundingUnit: viewState.roundingUnit,
+                groups: viewState.groups
+            )
+        )
     }
 
     /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える

@@ -12,6 +12,11 @@ import XCTest
 @MainActor
 final class SakuttoSplitRouterTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: AdFreeStore.adFreeUntilKey)
+    }
+
     func testAssembleModule_ReturnsPresenterAndNonEmptyBannerAdUnitID() {
         let module = SakuttoSplitRouter.assembleModule()
 
