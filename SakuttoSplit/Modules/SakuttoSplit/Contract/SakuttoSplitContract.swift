@@ -12,6 +12,9 @@ import Foundation
 @MainActor
 protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var viewState: SakuttoSplitViewState { get }
+    var sessionChrome: SakuttoSplitSessionChrome { get }
+    /// 起動直後・精算直後の initial ではなく、前回と入力が違うときだけ確認する
+    var needsRestoreConfirmation: Bool { get }
     func didChangeTotalAmount(_ text: String)
     func didChangeRoundingUnit(_ unit: RoundingUnit)
     func didChangeGroupName(id: UUID, name: String)
@@ -23,6 +26,7 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapRemoveGroup(id: UUID)
     func didTapSettleComplete()
     func didEnterBackground()
+    func didTapRestoreLastBill()
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする

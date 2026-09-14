@@ -13,9 +13,16 @@ import Foundation
 final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     @Published private(set) var viewState: SakuttoSplitViewState
+    @Published private(set) var sessionChrome = SakuttoSplitSessionChrome()
 
     private let interactor: SakuttoSplitInteractorProtocol
     private let sessionStore: any BillSessionStoring
+
+    var needsRestoreConfirmation: Bool {
+        guard let lastBill = sessionStore.lastBill else { return false }
+        if Self.matchesInitialInput(viewState) { return false }
+        return makeSnapshot() != lastBill
+    }
 
     convenience init(interactor: SakuttoSplitInteractorProtocol) {
         self.init(
@@ -42,6 +49,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         var state = initialState
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
+        self.sessionChrome = SakuttoSplitSessionChrome(hasLastBill: sessionStore.lastBill != nil)
     }
 
     func didChangeTotalAmount(_ text: String) {
@@ -114,15 +122,45 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         saveLastBillIfValid()
     }
 
+    /// 前回会計を入力へ流し込み、計算は 1 回。確認ダイアログは View 側
+    func didTapRestoreLastBill() {
+        guard let snapshot = sessionStore.lastBill else { return }
+        applyUpdate { state in
+            state.totalAmountText = snapshot.totalAmountText
+            state.roundingUnit = snapshot.roundingUnit
+            state.groups = snapshot.groups
+        }
+    }
+
     private func saveLastBillIfValid() {
         guard viewState.validationIssue == nil else { return }
-        sessionStore.saveLastBill(
-            BillSnapshot(
-                totalAmountText: viewState.totalAmountText,
-                roundingUnit: viewState.roundingUnit,
-                groups: viewState.groups
-            )
+        sessionStore.saveLastBill(makeSnapshot())
+        refreshSessionChrome()
+    }
+
+    private func refreshSessionChrome() {
+        let next = SakuttoSplitSessionChrome(hasLastBill: sessionStore.lastBill != nil)
+        guard next != sessionChrome else { return }
+        sessionChrome = next
+    }
+
+    private func makeSnapshot() -> BillSnapshot {
+        BillSnapshot(
+            totalAmountText: viewState.totalAmountText,
+            roundingUnit: viewState.roundingUnit,
+            groups: viewState.groups
         )
+    }
+
+    private static func matchesInitialInput(_ state: SakuttoSplitViewState) -> Bool {
+        let initial = SakuttoSplitViewState.initial
+        return state.totalAmountText == initial.totalAmountText
+            && state.roundingUnit == initial.roundingUnit
+            && state.groups.map(inputFingerprint) == initial.groups.map(inputFingerprint)
+    }
+
+    private static func inputFingerprint(_ group: AttendeeGroupDraft) -> [String] {
+        [group.name, group.countText, "\(group.mode)", group.fixedAmountText, group.ratioText]
     }
 
     /// 入力が変わったときだけ 1 回計算し、viewState を 1 回だけ書き換える

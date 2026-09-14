@@ -246,6 +246,39 @@
         }
       }
     },
+    "session.restore" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の会計を復元"
+          }
+        }
+      }
+    },
+    "session.restore_confirm_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回保存した会計に戻します。今の入力は消えます。"
+          }
+        }
+      }
+    },
+    "session.restore_confirm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力中の内容を置き換えます"
+          }
+        }
+      }
+    },
     "settle.complete" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -16,6 +16,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     let isAdsSDKReady: Bool
     @FocusState private var focusedField: SakuttoSplitFocus?
     @State private var rootViewControllerBox = RootViewControllerBox()
+    @State private var isRestoreConfirmPresented = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -55,6 +56,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .scrollDismissesKeyboard(.immediately)
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        restoreToolbarItem
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         hideAdsToolbarItem
                     }
@@ -75,9 +79,25 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             adsController.refreshAdFreeState()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
+            switch phase {
+            case .active:
                 adsController.refreshAdFreeState()
+            case .background:
+                presenter.didEnterBackground()
+            default:
+                break
             }
+        }
+        .alert(
+            "session.restore_confirm_title",
+            isPresented: $isRestoreConfirmPresented
+        ) {
+            Button("session.restore") {
+                presenter.didTapRestoreLastBill()
+            }
+            Button(role: .cancel) {}
+        } message: {
+            Text("session.restore_confirm_message")
         }
     }
 
@@ -90,6 +110,24 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             return
         }
         adsController.presentInterstitialIfEligible(from: rootViewController)
+    }
+
+    @ViewBuilder
+    private var restoreToolbarItem: some View {
+        if presenter.sessionChrome.hasLastBill {
+            Button("session.restore") {
+                restoreLastBillTapped()
+            }
+        }
+    }
+
+    private func restoreLastBillTapped() {
+        focusedField = nil
+        if presenter.needsRestoreConfirmation {
+            isRestoreConfirmPresented = true
+        } else {
+            presenter.didTapRestoreLastBill()
+        }
     }
 
     private var hideAdsToolbarItem: some View {

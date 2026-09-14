@@ -631,3 +631,4 @@ grantAdFree
 ## 14. 実施記録
 
 - 2026-09-14: **フェーズ 0 完了**。`BillSnapshot` / `MemberSet` の Codable、`BillSessionStoring` + `BillSessionStore`、精算完了・background の妥当時保存テストがグリーン。復元ボタン・scenePhase・xcstrings は未着手（フェーズ 1）。
+- 2026-09-14: **フェーズ 1 完了**。前回会計の復元 Intent、左上ボタン（`hasLastBill` のときだけ）、initial 以外の確認アラート、`scenePhase == .background`、`session.*` キー。リワードとメンバーセットは未着手。

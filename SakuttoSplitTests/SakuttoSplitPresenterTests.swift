@@ -379,6 +379,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(store.lastBill?.groups.map(\.id), groupsBefore.map(\.id))
         XCTAssertEqual(store.lastBill?.groups.map(\.name), groupsBefore.map(\.name))
         XCTAssertEqual(store.lastBill?.groups.map(\.countText), groupsBefore.map(\.countText))
+        XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
     }
 
     func testDidTapSettleComplete_WhenEmptyTotal_DoesNotChangeExistingLastBill() {
@@ -446,6 +448,117 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
         XCTAssertEqual(store.lastBill, existing)
+        XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+    }
+
+    func testInit_WithExistingLastBill_StartsAtInitial_AndShowsRestore() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let groupID = UUID()
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "35000",
+                roundingUnit: .thousand,
+                groups: [
+                    AttendeeGroupDraft(
+                        id: groupID,
+                        name: "部長",
+                        countText: "1",
+                        mode: .fixed,
+                        fixedAmountText: "10000"
+                    )
+                ]
+            )
+        )
+
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
+        XCTAssertEqual(presenter.viewState.validationIssue, .emptyTotalAmount)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
+        XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertEqual(store.lastBill?.groups.map(\.id), [groupID])
+    }
+
+    func testDidTapRestoreLastBill_RestoresInputCalculatesOnce_AndEnablesShare() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        let groupsBefore = presenter.viewState.groups
+        presenter.didTapSettleComplete()
+        let callsAfterSettle = spy.calculateCallCount
+
+        presenter.didTapRestoreLastBill()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterSettle + 1)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+        XCTAssertEqual(presenter.viewState.groups.map(\.id), groupsBefore.map(\.id))
+        XCTAssertEqual(presenter.viewState.groups.map(\.name), groupsBefore.map(\.name))
+        XCTAssertEqual(presenter.viewState.groups.map(\.countText), groupsBefore.map(\.countText))
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertTrue(presenter.viewState.isShareEnabled)
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertEqual(
+            presenter.viewState.shareText,
+            Self.expectedShareTextForDefaultGroupsTotal35000
+        )
+    }
+
+    func testDidTapRestoreLastBill_WhenNoLastBill_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        let callsAfterInit = spy.calculateCallCount
+        let before = presenter.viewState
+
+        presenter.didTapRestoreLastBill()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertFalse(presenter.sessionChrome.hasLastBill)
+    }
+
+    func testDidTapRestoreLastBill_WhenAlreadyRestored_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        presenter.didTapRestoreLastBill()
+        let callsAfterRestore = spy.calculateCallCount
+
+        presenter.didTapRestoreLastBill()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterRestore)
+    }
+
+    func testNeedsRestoreConfirmation_WhenEditedAwayFromInitial_IsTrue() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
+
+        presenter.didChangeTotalAmount("1000")
+
+        XCTAssertTrue(presenter.needsRestoreConfirmation)
+        XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+    }
+
+    func testDidEnterBackground_WhenValid_SetsHasLastBill() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        XCTAssertFalse(presenter.sessionChrome.hasLastBill)
+        presenter.didChangeTotalAmount("35000")
+
+        presenter.didEnterBackground()
+
+        XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+        XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
     }
 
     func testDidTapSettleComplete_WhenFixedAmountExceedsTotal_DoesNotChangeExistingLastBill() {
