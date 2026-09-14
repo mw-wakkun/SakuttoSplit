@@ -8,6 +8,7 @@
 import SwiftUI
 import GoogleMobileAds
 
+/// アプリのエントリポイント。組み立て済みモジュールを安定所有する
 @main
 struct SakuttoSplitApp: App {
     @State private var splitView = SakuttoSplitRouter.assembleModule()

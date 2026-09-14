@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 過不足金の 1 行
 struct DifferenceRow: View, Equatable {
     let difference: Int
 
@@ -16,7 +17,7 @@ struct DifferenceRow: View, Equatable {
             Spacer()
             Text("difference.amount \(abs(difference))")
                 .bold()
-                .foregroundColor(difference >= 0 ? .green : .red)
+                .foregroundStyle(difference >= 0 ? .green : .red)
         }
     }
 }

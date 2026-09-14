@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 端数処理単位の選択
 struct RoundingUnitPicker: View {
     @Binding var selection: RoundingUnit
 

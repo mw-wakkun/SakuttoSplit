@@ -257,9 +257,9 @@ Presenter は `viewState` だけを `@Published` する。計算のたびに Vie
 - [x] フェーズ 2
 - [x] フェーズ 3
 - [x] フェーズ 4
-- [ ] フェーズ 5
+- [x] フェーズ 5
 
-実装はまだ行わない。着手するときは **フェーズ 0 → 1 の順** を崩さない。後工程ほど UI 差分が出る。
+実装は **フェーズ 0 → 1 の順** で進める。後工程ほど UI 差分が出る。
 
 ### フェーズ 0: 安全網（テストを先に厚くする）
 
@@ -571,7 +571,7 @@ Contract を 1 ファイルにまとめる理由: 小規模モジュールでは
 
 ## 12. 次のアクション
 
-次に着手するのは **フェーズ 5（一貫性・品質の仕上げ）** である。
+全フェーズ完了。README の VIPER 説明は実装と一致している。
 
 実装開始時は、このファイルのフェーズ単位で PR を切り、完了したフェーズにチェックを付けること。
 
@@ -587,3 +587,13 @@ Contract を 1 ファイルにまとめる理由: 小規模モジュールでは
 - `AdBannerView` は自身の `window.rootViewController` から root を取り、初回 attach 時だけ `load` する
 - `ForEach(id: \.name)` は残っていない。結果の identity は `GroupCalculationResult.groupID`
 - 入力デバウンスは未導入（計画どおり、現行の純計算では不要）
+
+### フェーズ 5（一貫性・品質の仕上げ）
+
+- ドキュメントコメントを型の責務を述べる一文に揃え、フェーズ番号やチュートリアル口調を削除した
+- クラスはいずれも `final`。テストヘルパーと Interactor の保持は `private`
+- `SplitBillInteractorTests` / `SakuttoSplitTests.swift` の食い違いを解消し、`SakuttoSplitInteractorTests` などファイル名とクラス名を対応させた。Presenter にバリデーションとシェア可否のテストを追加した
+- `foregroundColor` を `foregroundStyle` に置換した
+- `SplitValidationIssue`（総額未入力 / グループ 0 件 / 固定額超過）を ViewState で表現し、該当時はシェアボタンを disabled にする。計算結果の出し方は変えない
+- 計画書の `validationMessage: String?` は、ローカライズとテスト容易性のため enum にした
+- README のアーキテクチャ節を Intent / ViewState 方式の実構造に更新した

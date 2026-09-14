@@ -41,7 +41,9 @@ struct SakuttoSplitView: View {
                         CalculationResultSection(
                             results: presenter.viewState.results,
                             difference: presenter.viewState.difference,
-                            shareText: presenter.shareText()
+                            shareText: presenter.shareText(),
+                            validationIssue: presenter.viewState.validationIssue,
+                            isShareEnabled: presenter.viewState.isShareEnabled
                         )
                     }
                 }

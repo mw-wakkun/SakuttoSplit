@@ -256,6 +256,39 @@
           }
         }
       }
+    },
+    "validation.empty_total" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "総額を入力してください"
+          }
+        }
+      }
+    },
+    "validation.fixed_exceeds_total" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "固定額の合計が総額を超えています"
+          }
+        }
+      }
+    },
+    "validation.no_groups" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "参加者グループを追加してください"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

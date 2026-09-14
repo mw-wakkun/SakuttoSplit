@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 人数などの整数を 範囲内で増減する汎用ステッパー。計算は呼ばない
+/// 人数などの整数を範囲内で増減する汎用ステッパー。計算は呼ばない
 struct CountStepper<FocusValue: Hashable>: View {
     @Binding var text: String
     var range: ClosedRange<Int> = InputLimits.groupCountRange

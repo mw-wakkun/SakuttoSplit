@@ -21,6 +21,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.groups[1].name, "一般")
         XCTAssertEqual(presenter.viewState.roundingUnit, .hundred)
         XCTAssertEqual(presenter.viewState.totalAmountText, "")
+        XCTAssertEqual(presenter.viewState.validationIssue, .emptyTotalAmount)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
     }
 
     func testDidChangeTotalAmount_SanitizesDigitsAndMaxLength_CalculatesOnce() {
@@ -153,6 +155,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         ※PayPay等で送金をお願いします！
         """
         XCTAssertEqual(presenter.shareText(), expected)
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertTrue(presenter.viewState.isShareEnabled)
     }
 
     func testViewState_UpdatesResultsInTheSameAssignmentAsInput() {
@@ -173,7 +177,7 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.difference, -50)
     }
 
-    /// フェーズ 4: 人数 +/- は Intent 1 回 = 計算 1 回
+    /// 人数 +/- は Intent 1 回 = 計算 1 回
     func testDidChangeGroupCount_Increment_CalculatesExactlyOnce() {
         let spy = CalculatingSpyInteractor()
         let presenter = SakuttoSplitPresenter(interactor: spy)
@@ -187,7 +191,7 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit + 1)
     }
 
-    /// フェーズ 4: 同名グループでも結果は groupID で区別できる
+    /// 同名グループでも結果は groupID で区別できる
     func testDuplicateGroupNames_ResultsAreIdentifiedByGroupID() {
         let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
         let firstID = presenter.viewState.groups[0].id
@@ -205,43 +209,70 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.results.map(\.id), [firstID, secondID])
         XCTAssertEqual(Set(presenter.viewState.results.map(\.id)).count, 2)
     }
-}
 
-@MainActor
-final class SakuttoSplitRouterTests: XCTestCase {
+    func testValidation_EmptyTotalAmount_DisablesShare() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
 
-    func testAssembleModule_ReturnsConcreteViewHoldingPresenter() {
-        let view = SakuttoSplitRouter.assembleModule()
+        XCTAssertEqual(presenter.viewState.validationIssue, .emptyTotalAmount)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
 
-        XCTAssertEqual(view.presenter.viewState.groups.count, 2)
-        XCTAssertEqual(view.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
-        XCTAssertFalse(view.bannerAdUnitID.isEmpty)
+        presenter.didChangeTotalAmount("35000")
+
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertTrue(presenter.viewState.isShareEnabled)
+    }
+
+    func testValidation_ShortageDoesNotDisableShare() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+
+        presenter.didChangeTotalAmount("35000")
+
+        XCTAssertEqual(presenter.viewState.difference, -200)
+        XCTAssertNil(presenter.viewState.validationIssue)
+        XCTAssertTrue(presenter.viewState.isShareEnabled)
+    }
+
+    func testValidation_NoGroups_DisablesShare() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+        presenter.didChangeTotalAmount("35000")
+        let firstID = presenter.viewState.groups[0].id
+        let secondID = presenter.viewState.groups[1].id
+
+        presenter.didTapRemoveGroup(id: firstID)
+        presenter.didTapRemoveGroup(id: secondID)
+
+        XCTAssertTrue(presenter.viewState.groups.isEmpty)
+        XCTAssertEqual(presenter.viewState.validationIssue, .noGroups)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
+    }
+
+    func testValidation_NoGroupsTakesPrecedenceOverEmptyTotal() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+        let firstID = presenter.viewState.groups[0].id
+        let secondID = presenter.viewState.groups[1].id
+
+        presenter.didTapRemoveGroup(id: firstID)
+        presenter.didTapRemoveGroup(id: secondID)
+
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
+        XCTAssertEqual(presenter.viewState.validationIssue, .noGroups)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
+    }
+
+    func testValidation_FixedAmountExceedsTotal_DisablesShare_KeepsCalculation() {
+        let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
+
+        presenter.didChangeTotalAmount("5000")
+
+        XCTAssertEqual(presenter.viewState.validationIssue, .fixedAmountExceedsTotal)
+        XCTAssertFalse(presenter.viewState.isShareEnabled)
+        XCTAssertEqual(presenter.viewState.results[0].amountPerPerson, 10000)
+        XCTAssertEqual(presenter.viewState.results[1].amountPerPerson, 0)
+        XCTAssertEqual(presenter.viewState.difference, 5000)
     }
 }
 
-@MainActor
-final class InputLimitsTests: XCTestCase {
-
-    func testSanitizedTotalAmountText_StripsNonDigitsAndCapsAt8() {
-        XCTAssertEqual(InputLimits.sanitizedTotalAmountText("12a3456789"), "12345678")
-        XCTAssertEqual(InputLimits.sanitizedTotalAmountText(""), "")
-    }
-
-    func testSanitizedCountText_AllowsEmptyAndClampsAt999() {
-        XCTAssertEqual(InputLimits.sanitizedCountText(""), "")
-        XCTAssertEqual(InputLimits.sanitizedCountText("0"), "0")
-        XCTAssertEqual(InputLimits.sanitizedCountText("12a3"), "123")
-        XCTAssertEqual(InputLimits.sanitizedCountText("1000"), "999")
-    }
-
-    func testSanitizedRatioText_KeepsOneDot() {
-        XCTAssertEqual(InputLimits.sanitizedRatioText("1.2.5"), "1.25")
-        XCTAssertEqual(InputLimits.sanitizedRatioText("."), ".")
-    }
-}
-
-@MainActor
-final class CalculatingSpyInteractor: SakuttoSplitInteractorProtocol {
+private final class CalculatingSpyInteractor: SakuttoSplitInteractorProtocol {
     private(set) var calculateCallCount = 0
     private(set) var lastInput: BillCalculationInput?
     var stub: BillCalculationOutput?

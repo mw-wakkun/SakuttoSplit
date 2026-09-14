@@ -32,7 +32,7 @@ struct GroupRowView: View {
                 )
 
                 Button(role: .destructive, action: onRemove) {
-                    Image(systemName: "trash").foregroundColor(.red)
+                    Image(systemName: "trash").foregroundStyle(.red)
                 }
                 .buttonStyle(.borderless)
             }

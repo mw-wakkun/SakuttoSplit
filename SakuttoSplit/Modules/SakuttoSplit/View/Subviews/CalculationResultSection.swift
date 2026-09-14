@@ -12,6 +12,8 @@ struct CalculationResultSection: View {
     let results: [GroupCalculationResult]
     let difference: Int
     let shareText: String
+    let validationIssue: SplitValidationIssue?
+    let isShareEnabled: Bool
 
     var body: some View {
         ForEach(results) { result in
@@ -22,11 +24,18 @@ struct CalculationResultSection: View {
         DifferenceRow(difference: difference)
             .equatable()
 
+        if let validationIssue {
+            Text(validationIssue.messageKey)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+
         // ShareLink + listRowBackground は EquatableView に包むと行背景が落ち、白文字が見えなくなる
-        ShareResultButton(shareText: shareText)
+        ShareResultButton(shareText: shareText, isEnabled: isShareEnabled)
     }
 }
 
+/// グループ単位の計算結果行
 struct ResultRow: View, Equatable {
     let result: GroupCalculationResult
 
@@ -36,13 +45,26 @@ struct ResultRow: View, Equatable {
             Spacer()
             VStack(alignment: .trailing) {
                 Text("result.per_person \(result.amountPerPerson)").bold()
-                Text("result.group_total \(result.total)").font(.caption).foregroundColor(.secondary)
+                Text("result.group_total \(result.total)").font(.caption).foregroundStyle(.secondary)
             }
         }
     }
 }
 
-#Preview {
+private extension SplitValidationIssue {
+    var messageKey: LocalizedStringKey {
+        switch self {
+        case .emptyTotalAmount:
+            "validation.empty_total"
+        case .noGroups:
+            "validation.no_groups"
+        case .fixedAmountExceedsTotal:
+            "validation.fixed_exceeds_total"
+        }
+    }
+}
+
+#Preview("results") {
     Form {
         CalculationResultSection(
             results: [
@@ -50,7 +72,21 @@ struct ResultRow: View, Equatable {
                 GroupCalculationResult(groupID: UUID(), name: "一般", amountPerPerson: 6200, total: 24800)
             ],
             difference: -200,
-            shareText: "🍻 本日のお会計 🍻"
+            shareText: "🍻 本日のお会計 🍻",
+            validationIssue: nil,
+            isShareEnabled: true
+        )
+    }
+}
+
+#Preview("empty total") {
+    Form {
+        CalculationResultSection(
+            results: [],
+            difference: 0,
+            shareText: "",
+            validationIssue: .emptyTotalAmount,
+            isShareEnabled: false
         )
     }
 }

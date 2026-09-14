@@ -11,21 +11,27 @@
 ## 技術スタック
 - **Language**: Swift 6.0
 - **UI Framework**: SwiftUI
-- **Architecture**: **VIPER** (View, Interactor, Presenter, Entity, Router)
+- **Architecture**: **VIPER**（View / Interactor / Presenter / Entity / Router）。SwiftUI 向けに Intent / ViewState 方式
 - **Unit Testing**: XCTest
 
-## アーキテクチャのこだわり
-本作では、スケーラビリティとテスト容易性を確保するため、**VIPERアーキテクチャ**を採用しています。
+## アーキテクチャ
+View は描画と Intent の転送だけを行い、判断・正規化・計算起動は Presenter、割り勘計算は Interactor、生成物は Entity、組み立ては Router が担います。
 
-- **Interactor**: 複雑な割り勘の計算ロジックをカプセル化し、純粋なビジネスロジックとして独立させています。
-- **Presenter**: `ObservableObject` としてViewの状態を管理し、Interactorとの橋渡しを担います。
-- **Router**: モジュールの依存関係を注入（Dependency Injection）し、各部品を組み立てます。
+- **View**: `SakuttoSplitView` がセクションを組み立てる。サブビューは Presenter 全体を受け取らず、値・Binding・クロージャだけを受ける。
+- **Presenter**: `@MainActor`。`viewState` を 1 つの `@Published` で公開し、入力 Intent のたびに計算を 1 回行う。シェア文面と入力バリデーションもここ。
+- **Interactor**: `SakuttoSplitInteractorProtocol` に適合。`BillCalculationInput` を受け、`BillCalculationOutput` を返す同期の純関数。
+- **Entity**: `AttendeeGroup`（ドメイン）、`AttendeeGroupDraft`（TextField 用）、`PaymentMode`、`RoundingUnit`、計算の入出力。
+- **Router**: 具象 `SakuttoSplitView` を組み立てる。`AnyView` は使わない。`SakuttoSplitApp` がモジュールを `@State` で安定所有する。
+- **Config**: 広告ユニット ID（`AdConfiguration`）と入力上限（`InputLimits`）。
+
+プロトコルは `SakuttoSplitContract.swift` に集約し、Presenter / Interactor はプロトコル経由で差し替えできるようにしています。
 
 ## 品質担保
-`SakuttoSplitTests.swift` において、`XCTest` を用いたロジックテストを実装しています。
-- 基本的な均等割りのテスト
-- 固定額と割合が混合した複雑なパターンの計算精度テスト
-- 端数処理（切り捨て）および不足金の算出テスト
+`SakuttoSplitTests` で Interactor / Presenter / Router / Entity 変換 / 入力正規化を `XCTest` しています。テストファイル名とクラス名は対応させています。
+
+- Interactor: 均等割り、固定額と割合の混合、端数単位、空入力、固定額超過、同名グループなど
+- Presenter: 入力正規化、1 Intent = 1 計算、シェア文、バリデーションとシェア可否
+- 計算結果の identity はグループ名ではなく `groupID`
 
 ## スクリーンショット
 | 入力画面 | 計算結果とシェア |

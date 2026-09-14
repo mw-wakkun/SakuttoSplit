@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 総額入力欄
 struct TotalAmountSection: View {
     @Binding var text: String
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding

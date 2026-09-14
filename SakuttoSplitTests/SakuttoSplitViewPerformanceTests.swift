@@ -9,7 +9,7 @@ import SwiftUI
 import XCTest
 @testable import SakuttoSplit
 
-/// フェーズ 4: Equatable な子 View と結果 identity の契約
+/// Equatable な子 View と結果 identity の契約
 final class SakuttoSplitViewPerformanceTests: XCTestCase {
 
     func testAdBannerView_IsEquatableByAdUnitID() {
@@ -34,9 +34,19 @@ final class SakuttoSplitViewPerformanceTests: XCTestCase {
         XCTAssertNotEqual(DifferenceRow(difference: 100), DifferenceRow(difference: -100))
     }
 
-    func testShareResultButton_IsEquatableByShareText() {
-        XCTAssertEqual(ShareResultButton(shareText: "a"), ShareResultButton(shareText: "a"))
-        XCTAssertNotEqual(ShareResultButton(shareText: "a"), ShareResultButton(shareText: "b"))
+    func testShareResultButton_IsEquatableByShareTextAndEnabled() {
+        XCTAssertEqual(
+            ShareResultButton(shareText: "a", isEnabled: true),
+            ShareResultButton(shareText: "a", isEnabled: true)
+        )
+        XCTAssertNotEqual(
+            ShareResultButton(shareText: "a", isEnabled: true),
+            ShareResultButton(shareText: "b", isEnabled: true)
+        )
+        XCTAssertNotEqual(
+            ShareResultButton(shareText: "a", isEnabled: true),
+            ShareResultButton(shareText: "a", isEnabled: false)
+        )
     }
 
     func testGroupCalculationResult_IdentityIsGroupID_NotName() {

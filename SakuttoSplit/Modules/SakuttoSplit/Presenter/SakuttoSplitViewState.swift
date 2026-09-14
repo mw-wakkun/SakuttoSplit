@@ -7,6 +7,16 @@
 
 import Foundation
 
+/// シェアを無効化する入力エラー。計算結果の出し方は変えない
+enum SplitValidationIssue: Equatable {
+    /// 総額が未入力
+    case emptyTotalAmount
+    /// 参加者グループが 0 件
+    case noGroups
+    /// 固定額の合計が総額を超えている
+    case fixedAmountExceedsTotal
+}
+
 /// 割り勘画面の表示状態。Presenter が 1 つの Published として公開する
 struct SakuttoSplitViewState: Equatable {
     var totalAmountText: String
@@ -14,7 +24,9 @@ struct SakuttoSplitViewState: Equatable {
     var groups: [AttendeeGroupDraft]
     var results: [GroupCalculationResult]
     var difference: Int
-    var validationMessage: String?
+    var validationIssue: SplitValidationIssue?
+
+    var isShareEnabled: Bool { validationIssue == nil }
 
     static let initial = SakuttoSplitViewState(
         totalAmountText: "",
@@ -25,6 +37,6 @@ struct SakuttoSplitViewState: Equatable {
         ],
         results: [],
         difference: 0,
-        validationMessage: nil
+        validationIssue: .emptyTotalAmount
     )
 }

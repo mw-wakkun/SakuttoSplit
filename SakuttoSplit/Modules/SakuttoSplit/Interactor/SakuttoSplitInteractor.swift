@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// 割り勘の計算ロジック（ビジネスロジック）を専門に扱うインターラクター
+/// 割り勘計算のユースケース実装
 final class SakuttoSplitInteractor: SakuttoSplitInteractorProtocol {
 
     /// 与えられた条件に基づいて割り勘の計算を実行する

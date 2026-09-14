@@ -105,9 +105,15 @@ final class SakuttoSplitPresenter: SakuttoSplitPresentable {
         to state: inout SakuttoSplitViewState,
         interactor: SakuttoSplitInteractorProtocol
     ) {
-        let output = interactor.calculateBill(makeInput(from: state))
+        let input = makeInput(from: state)
+        let output = interactor.calculateBill(input)
         state.results = output.results
         state.difference = output.difference
+        state.validationIssue = validationIssue(
+            groupsEmpty: state.groups.isEmpty,
+            totalAmountText: state.totalAmountText,
+            input: input
+        )
     }
 
     private static func makeInput(from state: SakuttoSplitViewState) -> BillCalculationInput {
@@ -116,5 +122,27 @@ final class SakuttoSplitPresenter: SakuttoSplitPresentable {
             roundingUnit: state.roundingUnit,
             groups: state.groups.map { $0.toDomain() }
         )
+    }
+
+    private static func validationIssue(
+        groupsEmpty: Bool,
+        totalAmountText: String,
+        input: BillCalculationInput
+    ) -> SplitValidationIssue? {
+        if groupsEmpty {
+            return .noGroups
+        }
+        if totalAmountText.isEmpty {
+            return .emptyTotalAmount
+        }
+        let fixedTotal = input.groups.reduce(into: 0) { sum, group in
+            if group.mode == .fixed {
+                sum += group.fixedAmount * group.count
+            }
+        }
+        if fixedTotal > input.totalAmount {
+            return .fixedAmountExceedsTotal
+        }
+        return nil
     }
 }

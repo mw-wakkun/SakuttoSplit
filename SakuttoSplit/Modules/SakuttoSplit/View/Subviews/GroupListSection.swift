@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 参加者グループ一覧と追加ボタン
 struct GroupListSection: View {
     let groups: [AttendeeGroupDraft]
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
