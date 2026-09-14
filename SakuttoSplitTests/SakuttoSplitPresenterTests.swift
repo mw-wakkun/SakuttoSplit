@@ -479,6 +479,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertFalse(presenter.viewState.isShareEnabled)
         XCTAssertTrue(presenter.sessionChrome.hasLastBill)
         XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertTrue(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
         XCTAssertEqual(store.lastBill?.groups.map(\.id), [groupID])
         XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.totalAmountText, "35000")
         XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.seatCount, 1)
@@ -504,6 +506,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertNil(presenter.viewState.validationIssue)
         XCTAssertTrue(presenter.viewState.isShareEnabled)
         XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertTrue(presenter.showsRestoreToolbar)
         XCTAssertEqual(
             presenter.viewState.shareText,
             Self.expectedShareTextForDefaultGroupsTotal35000
@@ -522,6 +526,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
         XCTAssertEqual(presenter.viewState, before)
         XCTAssertFalse(presenter.sessionChrome.hasLastBill)
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
     }
 
     func testDidTapRestoreLastBill_WhenAlreadyRestored_DoesNotRecalculate() {
@@ -545,11 +551,15 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         presenter.didChangeTotalAmount("35000")
         presenter.didTapSettleComplete()
         XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertTrue(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
 
         presenter.didChangeTotalAmount("1000")
 
         XCTAssertTrue(presenter.needsRestoreConfirmation)
         XCTAssertTrue(presenter.sessionChrome.hasLastBill)
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertTrue(presenter.showsRestoreToolbar)
     }
 
     func testDidEnterBackground_WhenValid_SetsHasLastBill() {
@@ -574,6 +584,8 @@ final class SakuttoSplitPresenterTests: XCTestCase {
 
         XCTAssertFalse(presenter.sessionChrome.hasLastBill)
         XCTAssertNil(presenter.sessionChrome.lastBillPreview)
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
     }
 
     func testLastBillPreview_DefaultGroupsWithTwoPaidSeats_UnpaidThreeOfFive() {
@@ -615,6 +627,33 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.seatCount, 5)
         XCTAssertEqual(presenter.sessionChrome.lastBillPreview?.unpaidCount, 3)
         XCTAssertEqual(presenter.viewState.totalAmountText, "")
+        XCTAssertTrue(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
+    }
+
+    func testResumeCardAndRestoreToolbar_NeverShowTogether() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
+
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        XCTAssertTrue(presenter.showsResumeCard)
+        XCTAssertFalse(presenter.showsRestoreToolbar)
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
+
+        presenter.didTapRestoreLastBill()
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertTrue(presenter.showsRestoreToolbar)
+        XCTAssertFalse(presenter.needsRestoreConfirmation)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
+
+        presenter.didChangeTotalAmount("1000")
+        XCTAssertFalse(presenter.showsResumeCard)
+        XCTAssertTrue(presenter.showsRestoreToolbar)
+        XCTAssertTrue(presenter.needsRestoreConfirmation)
     }
 
     func testDidTapSaveMemberSet_WhenSlotAvailable_PersistsWithoutRecalculating() {

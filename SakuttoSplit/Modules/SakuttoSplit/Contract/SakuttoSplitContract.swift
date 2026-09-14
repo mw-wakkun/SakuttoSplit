@@ -21,6 +21,10 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var isUnpaidShareEnabled: Bool { get }
     /// 起動直後・精算直後の initial ではなく、前回と入力が違うときだけ確認する
     var needsRestoreConfirmation: Bool { get }
+    /// initial かつ lastBill があるときだけ再開カードを出す
+    var showsResumeCard: Bool { get }
+    /// initial ではなく lastBill があるときだけ左上復元を出す
+    var showsRestoreToolbar: Bool { get }
     func didChangeTotalAmount(_ text: String)
     func didChangeRoundingUnit(_ unit: RoundingUnit)
     func didChangeGroupName(id: UUID, name: String)

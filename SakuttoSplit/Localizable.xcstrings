@@ -323,6 +323,28 @@
         }
       }
     },
+    "session.resume_card_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前回の会計を続ける"
+          }
+        }
+      }
+    },
+    "session.resume_card_unpaid %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未払い %lld / %lld"
+          }
+        }
+      }
+    },
     "session.restore" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -527,7 +549,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "例: 35000"
+            "value" : "例: 35,000"
           }
         }
       }

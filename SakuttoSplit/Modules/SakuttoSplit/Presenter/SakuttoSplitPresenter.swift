@@ -36,6 +36,14 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         return makeSnapshot() != lastBill
     }
 
+    var showsResumeCard: Bool {
+        sessionChrome.lastBillPreview != nil && Self.matchesInitialInput(viewState)
+    }
+
+    var showsRestoreToolbar: Bool {
+        sessionChrome.hasLastBill && !Self.matchesInitialInput(viewState)
+    }
+
     /// 編成適用前の groups + roundingUnit。通常の applyUpdate で捨てる
     private var memberSetUndo: MemberSetUndo?
 

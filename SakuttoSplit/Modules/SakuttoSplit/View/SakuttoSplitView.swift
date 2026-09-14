@@ -29,6 +29,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             NavigationStack {
                 Form {
                     Section("section.billing") {
+                        if presenter.showsResumeCard, let preview = presenter.sessionChrome.lastBillPreview {
+                            ResumeLastBillCard(preview: preview, onTap: restoreFromResumeCard)
+                        }
                         TotalAmountSection(text: totalAmountBinding, focusedField: $focusedField)
                         RoundingUnitPicker(selection: roundingUnitBinding)
                     }
@@ -182,11 +185,17 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
     @ViewBuilder
     private var restoreToolbarItem: some View {
-        if presenter.sessionChrome.hasLastBill {
+        if presenter.showsRestoreToolbar {
             Button("session.restore") {
                 restoreLastBillTapped()
             }
         }
+    }
+
+    /// カードは initial だけ出るので確認しない。復元後は金額を読むためフォーカスしない
+    private func restoreFromResumeCard() {
+        focusedField = nil
+        presenter.didTapRestoreLastBill()
     }
 
     private func restoreLastBillTapped() {

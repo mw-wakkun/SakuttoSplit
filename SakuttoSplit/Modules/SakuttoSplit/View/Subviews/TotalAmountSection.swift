@@ -7,32 +7,62 @@
 
 import SwiftUI
 
-/// 総額入力欄
+/// ヒーロー総額。正本は数字文字列のまま。非フォーカス時だけグループ化して見せる
 struct TotalAmountSection: View {
     @Binding var text: String
     var focusedField: FocusState<SakuttoSplitFocus?>.Binding
 
+    private var isFocused: Bool {
+        focusedField.wrappedValue == .totalAmount
+    }
+
     var body: some View {
-        HStack {
-            BoundedIntegerField(
-                text: $text,
-                placeholder: "total_amount.placeholder",
-                maxDigits: InputLimits.totalAmountMaxDigits,
-                focusedField: focusedField,
-                focusValue: .totalAmount
-            )
-            .font(.title2)
+        HStack(alignment: .firstTextBaseline) {
+            ZStack(alignment: .leading) {
+                BoundedIntegerField(
+                    text: $text,
+                    placeholder: "total_amount.placeholder",
+                    maxDigits: InputLimits.totalAmountMaxDigits,
+                    focusedField: focusedField,
+                    focusValue: .totalAmount
+                )
+                .opacity(isFocused ? 1 : 0)
+
+                if !isFocused {
+                    unfocusedDisplay
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .font(.largeTitle.monospacedDigit())
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+
             Text("unit.yen")
+        }
+    }
+
+    @ViewBuilder
+    private var unfocusedDisplay: some View {
+        if text.isEmpty {
+            Text("total_amount.placeholder")
+                .foregroundStyle(.secondary)
+        } else {
+            Text(YenFormatting.grouped(fromDigitText: text))
         }
     }
 }
 
-#Preview {
-    TotalAmountSectionPreview()
+#Preview("empty") {
+    TotalAmountSectionPreview(text: "")
+}
+
+#Preview("grouped") {
+    TotalAmountSectionPreview(text: "35000")
 }
 
 private struct TotalAmountSectionPreview: View {
-    @State private var text = "35000"
+    @State var text: String
     @FocusState private var focusedField: SakuttoSplitFocus?
 
     var body: some View {
