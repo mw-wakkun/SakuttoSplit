@@ -7,9 +7,10 @@
 
 import Foundation
 
-/// 組み立て結果。Presenter の所有権は呼び出し側（App）が持つ
+/// 組み立て結果。Presenter / AdsController の所有権は呼び出し側（App）が持つ
 struct SakuttoSplitModule {
     let presenter: SakuttoSplitPresenter
+    let adsController: AdsController
     let bannerAdUnitID: String
     let interstitialAdUnitID: String
     let rewardedAdUnitID: String
@@ -26,8 +27,13 @@ enum SakuttoSplitRouter {
     ) -> SakuttoSplitModule {
         let interactor = SakuttoSplitInteractor()
         let presenter = SakuttoSplitPresenter(interactor: interactor)
+        let adsController = AdsController(
+            interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
+            rewardedAdUnitID: adConfiguration.rewardedAdUnitID
+        )
         return SakuttoSplitModule(
             presenter: presenter,
+            adsController: adsController,
             bannerAdUnitID: adConfiguration.bannerAdUnitID,
             interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
             rewardedAdUnitID: adConfiguration.rewardedAdUnitID

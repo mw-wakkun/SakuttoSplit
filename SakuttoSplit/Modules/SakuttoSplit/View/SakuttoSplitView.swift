@@ -11,11 +11,11 @@ import SwiftUI
 struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
     @ObservedObject var presenter: Presenter
+    @ObservedObject var adsController: AdsController
     let bannerAdUnitID: String
     let isAdsSDKReady: Bool
-    /// AdsController 未接続のフェーズ 1 では常に false
-    var isAdFree: Bool = false
     @FocusState private var focusedField: SakuttoSplitFocus?
+    @State private var rootViewControllerBox = RootViewControllerBox()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,10 +46,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                             difference: presenter.viewState.difference,
                             shareText: presenter.viewState.shareText,
                             validationIssue: presenter.viewState.validationIssue,
-                            onSettleComplete: {
-                                focusedField = nil
-                                presenter.didTapSettleComplete()
-                            }
+                            onSettleComplete: settleComplete
                         )
                     }
                 }
@@ -66,6 +63,21 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
 
             adBannerSlot
         }
+        .background {
+            RootViewControllerProbe(box: rootViewControllerBox)
+                .frame(width: 0, height: 0)
+        }
+    }
+
+    /// リセットしてから広告。Presenter は SDK を知らない
+    private func settleComplete() {
+        focusedField = nil
+        let canSettle = presenter.viewState.validationIssue == nil
+        presenter.didTapSettleComplete()
+        guard canSettle, let rootViewController = rootViewControllerBox.rootViewController else {
+            return
+        }
+        adsController.presentInterstitialIfEligible(from: rootViewController)
     }
 }
 
@@ -78,13 +90,13 @@ private extension SakuttoSplitView {
             if AdBannerSlot.showsLoadedBanner(
                 isAdsSDKReady: isAdsSDKReady,
                 isFocused: focusedField != nil,
-                isAdFree: isAdFree
+                isAdFree: adsController.isAdFree
             ) {
                 AdBannerView(adUnitID: bannerAdUnitID)
                     .equatable()
             }
         }
-        .frame(height: AdBannerSlot.height(isFocused: focusedField != nil, isAdFree: isAdFree))
+        .frame(height: AdBannerSlot.height(isFocused: focusedField != nil, isAdFree: adsController.isAdFree))
         .clipped()
     }
 }

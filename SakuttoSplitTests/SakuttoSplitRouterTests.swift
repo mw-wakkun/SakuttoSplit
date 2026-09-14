@@ -16,6 +16,7 @@ final class SakuttoSplitRouterTests: XCTestCase {
         let module = SakuttoSplitRouter.assembleModule()
 
         XCTAssertEqual(module.presenter.viewState.groups.count, 2)
+        XCTAssertFalse(module.adsController.isAdFree)
         XCTAssertFalse(module.bannerAdUnitID.isEmpty)
         XCTAssertEqual(module.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
         XCTAssertEqual(module.interstitialAdUnitID, AdConfiguration.defaultInterstitialAdUnitID)
@@ -54,6 +55,7 @@ final class SakuttoSplitRouterTests: XCTestCase {
         let module = SakuttoSplitRouter.assembleModule()
         let view = SakuttoSplitView(
             presenter: module.presenter,
+            adsController: module.adsController,
             bannerAdUnitID: module.bannerAdUnitID,
             isAdsSDKReady: false
         )
@@ -61,7 +63,7 @@ final class SakuttoSplitRouterTests: XCTestCase {
         XCTAssertEqual(view.presenter.viewState.groups.count, 2)
         XCTAssertEqual(view.bannerAdUnitID, module.bannerAdUnitID)
         XCTAssertFalse(view.isAdsSDKReady)
-        XCTAssertFalse(view.isAdFree)
+        XCTAssertFalse(view.adsController.isAdFree)
     }
 }
 
