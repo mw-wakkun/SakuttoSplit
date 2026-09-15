@@ -22,6 +22,18 @@ final class ArchitectureBoundaryTests: XCTestCase {
         )
     }
 
+    func testStoreKitImport_IsOnlyInAdConfiguration() throws {
+        let offenders = try filesMatching { url, source in
+            url.lastPathComponent != "AdConfiguration.swift"
+                && containsImport(source, module: "StoreKit")
+        }
+
+        XCTAssertTrue(
+            offenders.isEmpty,
+            "StoreKit is only allowed in AdConfiguration.swift: \(names(of: offenders))"
+        )
+    }
+
     func testGoogleMobileAdsImport_IsOnlyInAllowedFiles() throws {
         let allowed: Set<String> = [
             "SakuttoSplitApp.swift",

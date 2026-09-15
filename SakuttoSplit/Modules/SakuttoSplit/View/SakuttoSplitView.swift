@@ -561,11 +561,12 @@ private extension SakuttoSplitView {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
-            } else if AdBannerSlot.showsLoadedBanner(
-                isAdsSDKReady: isAdsSDKReady,
-                isFocused: focusedField != nil,
-                isAdFree: adsController.isAdFree
-            ) {
+            } else if !bannerAdUnitID.isEmpty,
+                      AdBannerSlot.showsLoadedBanner(
+                        isAdsSDKReady: isAdsSDKReady,
+                        isFocused: focusedField != nil,
+                        isAdFree: adsController.isAdFree
+                      ) {
                 AdBannerView(adUnitID: bannerAdUnitID)
                     .equatable()
             }

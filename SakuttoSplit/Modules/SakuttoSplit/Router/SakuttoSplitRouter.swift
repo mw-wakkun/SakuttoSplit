@@ -18,12 +18,30 @@ struct SakuttoSplitModule {
 
 /// VIPER の各部品を初期化して繋ぎ合わせる
 enum SakuttoSplitRouter {
+    /// 本番組み立て。ユニット ID は App / AdsController が配信判定のあと解決する
     static func assembleModule() -> SakuttoSplitModule {
-        assembleModule(adConfiguration: AdConfiguration())
+        assemble(adsController: AdsController(), bannerAdUnitID: "", interstitialAdUnitID: "", rewardedAdUnitID: "")
     }
 
     static func assembleModule(
         adConfiguration: any AdConfigurationProviding
+    ) -> SakuttoSplitModule {
+        assemble(
+            adsController: AdsController(
+                interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
+                rewardedAdUnitID: adConfiguration.rewardedAdUnitID
+            ),
+            bannerAdUnitID: adConfiguration.bannerAdUnitID,
+            interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
+            rewardedAdUnitID: adConfiguration.rewardedAdUnitID
+        )
+    }
+
+    private static func assemble(
+        adsController: AdsController,
+        bannerAdUnitID: String,
+        interstitialAdUnitID: String,
+        rewardedAdUnitID: String
     ) -> SakuttoSplitModule {
         let interactor = SakuttoSplitInteractor()
         let presenter = SakuttoSplitPresenter(
@@ -31,16 +49,12 @@ enum SakuttoSplitRouter {
             sessionStore: BillSessionStore(),
             reminderScheduler: UnpaidReminderScheduler()
         )
-        let adsController = AdsController(
-            interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
-            rewardedAdUnitID: adConfiguration.rewardedAdUnitID
-        )
         return SakuttoSplitModule(
             presenter: presenter,
             adsController: adsController,
-            bannerAdUnitID: adConfiguration.bannerAdUnitID,
-            interstitialAdUnitID: adConfiguration.interstitialAdUnitID,
-            rewardedAdUnitID: adConfiguration.rewardedAdUnitID
+            bannerAdUnitID: bannerAdUnitID,
+            interstitialAdUnitID: interstitialAdUnitID,
+            rewardedAdUnitID: rewardedAdUnitID
         )
     }
 }

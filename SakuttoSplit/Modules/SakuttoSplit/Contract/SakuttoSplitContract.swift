@@ -73,7 +73,7 @@ protocol SakuttoSplitInteractorProtocol {
     func calculateBill(_ input: BillCalculationInput) -> BillCalculationOutput
 }
 
-/// 広告ユニット ID の供給。DEBUG / Release の切替は具象側
+/// 広告ユニット ID の供給。App Store 本番以外はテストユニット。切替は具象側
 protocol AdConfigurationProviding {
     var bannerAdUnitID: String { get }
     var interstitialAdUnitID: String { get }

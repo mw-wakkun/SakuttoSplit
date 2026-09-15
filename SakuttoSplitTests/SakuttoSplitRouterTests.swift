@@ -17,46 +17,14 @@ final class SakuttoSplitRouterTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: AdFreeStore.adFreeUntilKey)
     }
 
-    func testAssembleModule_ReturnsPresenterAndNonEmptyBannerAdUnitID() {
+    func testAssembleModule_DefersAdUnitIDsUntilRuntimeResolution() {
         let module = SakuttoSplitRouter.assembleModule()
 
         XCTAssertEqual(module.presenter.viewState.groups.count, 2)
         XCTAssertFalse(module.adsController.isAdFree)
-        XCTAssertFalse(module.bannerAdUnitID.isEmpty)
-        XCTAssertEqual(module.bannerAdUnitID, AdConfiguration.defaultBannerAdUnitID)
-        XCTAssertEqual(module.interstitialAdUnitID, AdConfiguration.defaultInterstitialAdUnitID)
-        XCTAssertEqual(module.rewardedAdUnitID, AdConfiguration.defaultRewardedAdUnitID)
-    }
-
-    func testDefaultAdConfiguration_DebugTestIDsAreNonEmpty() {
-        let config = AdConfiguration()
-
-        XCTAssertFalse(config.bannerAdUnitID.isEmpty)
-        #if DEBUG
-        XCTAssertFalse(config.interstitialAdUnitID.isEmpty)
-        XCTAssertFalse(config.rewardedAdUnitID.isEmpty)
-        XCTAssertEqual(config.bannerAdUnitID, "ca-app-pub-3940256099942544/2934735716")
-        XCTAssertEqual(config.interstitialAdUnitID, "ca-app-pub-3940256099942544/4411468910")
-        XCTAssertEqual(config.rewardedAdUnitID, "ca-app-pub-3940256099942544/1712485313")
-        #endif
-    }
-
-    func testProductionAdUnitIDs_AreNonEmptyReleaseIDs() {
-        XCTAssertEqual(
-            AdConfiguration.productionBannerAdUnitID,
-            "ca-app-pub-9676260030977388/3738962239"
-        )
-        XCTAssertEqual(
-            AdConfiguration.productionInterstitialAdUnitID,
-            "ca-app-pub-9676260030977388/7047443390"
-        )
-        XCTAssertEqual(
-            AdConfiguration.productionRewardedAdUnitID,
-            "ca-app-pub-9676260030977388/1795116714"
-        )
-        XCTAssertTrue(AdConfiguration.productionBannerAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
-        XCTAssertTrue(AdConfiguration.productionInterstitialAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
-        XCTAssertTrue(AdConfiguration.productionRewardedAdUnitID.hasPrefix("ca-app-pub-9676260030977388/"))
+        XCTAssertTrue(module.bannerAdUnitID.isEmpty)
+        XCTAssertTrue(module.interstitialAdUnitID.isEmpty)
+        XCTAssertTrue(module.rewardedAdUnitID.isEmpty)
     }
 
     func testAssembleModule_UsesInjectedAdConfiguration() {

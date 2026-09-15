@@ -19,8 +19,9 @@ final class AdsController: ObservableObject, AdsControlling {
     @Published private(set) var rewardUnavailable = false
     @Published private(set) var adFreeRemaining: TimeInterval = 0
 
-    private let interstitialAdUnitID: String
-    private let rewardedAdUnitID: String
+    /// `nil` はロード時に `AdConfiguration.resolved*` する。空文字はロードしない
+    private let interstitialAdUnitIDOverride: String?
+    private let rewardedAdUnitIDOverride: String?
     private let loader: any InterstitialAdHandling
     private let rewardedLoader: any RewardedAdHandling
     private let store: AdFreeStore
@@ -39,6 +40,17 @@ final class AdsController: ObservableObject, AdsControlling {
     private var rewardUnavailableClearTask: Task<Void, Never>?
     private var pendingReward: RewardedPurpose?
     private var pendingOnEarned: (() -> Void)?
+
+    convenience init() {
+        self.init(
+            interstitialAdUnitID: nil,
+            rewardedAdUnitID: nil,
+            loader: GoogleInterstitialLoader(),
+            rewardedLoader: GoogleRewardedLoader(),
+            store: AdFreeStore(),
+            adFreeDuration: AdFreeStore.defaultDuration
+        )
+    }
 
     convenience init(
         interstitialAdUnitID: String,
@@ -59,8 +71,8 @@ final class AdsController: ObservableObject, AdsControlling {
     }
 
     init(
-        interstitialAdUnitID: String,
-        rewardedAdUnitID: String = "",
+        interstitialAdUnitID: String?,
+        rewardedAdUnitID: String? = nil,
         loader: any InterstitialAdHandling,
         rewardedLoader: any RewardedAdHandling,
         store: AdFreeStore,
@@ -68,8 +80,8 @@ final class AdsController: ObservableObject, AdsControlling {
         now: @escaping () -> Date = Date.init,
         startDate: Date? = nil
     ) {
-        self.interstitialAdUnitID = interstitialAdUnitID
-        self.rewardedAdUnitID = rewardedAdUnitID
+        self.interstitialAdUnitIDOverride = interstitialAdUnitID
+        self.rewardedAdUnitIDOverride = rewardedAdUnitID
         self.loader = loader
         self.rewardedLoader = rewardedLoader
         self.store = store
@@ -191,6 +203,7 @@ final class AdsController: ObservableObject, AdsControlling {
     }
 
     private func loadInterstitialIfNeeded() async {
+        let interstitialAdUnitID = await resolvedInterstitialAdUnitID()
         guard !interstitialAdUnitID.isEmpty else { return }
         guard readyInterstitial == nil, presentingInterstitial == nil else { return }
         guard !isLoadingInterstitial else { return }
@@ -206,7 +219,22 @@ final class AdsController: ObservableObject, AdsControlling {
         isLoadingInterstitial = false
     }
 
+    private func resolvedInterstitialAdUnitID() async -> String {
+        if let interstitialAdUnitIDOverride {
+            return interstitialAdUnitIDOverride
+        }
+        return await AdConfiguration.resolvedInterstitialAdUnitID()
+    }
+
+    private func resolvedRewardedAdUnitID() async -> String {
+        if let rewardedAdUnitIDOverride {
+            return rewardedAdUnitIDOverride
+        }
+        return await AdConfiguration.resolvedRewardedAdUnitID()
+    }
+
     private func loadRewardedIfNeeded() async {
+        let rewardedAdUnitID = await resolvedRewardedAdUnitID()
         guard !rewardedAdUnitID.isEmpty else { return }
         guard readyRewarded == nil, presentingRewarded == nil else { return }
         guard !isLoadingRewarded else { return }

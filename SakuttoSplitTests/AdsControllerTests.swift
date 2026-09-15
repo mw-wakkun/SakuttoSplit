@@ -39,6 +39,28 @@ final class AdsControllerTests: XCTestCase {
         XCTAssertEqual(loader.lastAdUnitID, "ca-app-pub-test/interstitial")
     }
 
+    func testStartLoadingIfNeeded_WithoutOverride_UsesResolvedSampleIDsInDebug() async {
+        #if DEBUG
+        let interstitialLoader = StubInterstitialLoader(ad: FakeInterstitial())
+        let rewardedLoader = StubRewardedLoader(ad: FakeRewarded())
+        let controller = AdsController(
+            interstitialAdUnitID: nil,
+            rewardedAdUnitID: nil,
+            loader: interstitialLoader,
+            rewardedLoader: rewardedLoader,
+            store: AdFreeStore(defaults: defaults),
+            adFreeDuration: 24 * 60 * 60,
+            now: { Date(timeIntervalSince1970: 1_000) },
+            startDate: Date(timeIntervalSince1970: 1_000)
+        )
+
+        await controller.startLoadingIfNeeded()
+
+        XCTAssertEqual(interstitialLoader.lastAdUnitID, AdConfiguration.googleSampleInterstitialUnitID)
+        XCTAssertEqual(rewardedLoader.lastAdUnitID, AdConfiguration.googleSampleRewardedUnitID)
+        #endif
+    }
+
     func testStartLoadingIfNeeded_EmptyAdUnitID_DoesNotLoad() async {
         let loader = StubInterstitialLoader(ad: FakeInterstitial())
         let controller = makeController(interstitialAdUnitID: "", loader: loader)

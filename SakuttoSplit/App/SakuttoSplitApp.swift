@@ -13,14 +13,13 @@ import GoogleMobileAds
 struct SakuttoSplitApp: App {
     @StateObject private var presenter: SakuttoSplitPresenter
     @StateObject private var adsController: AdsController
-    private let bannerAdUnitID: String
+    @State private var bannerAdUnitID = ""
     @State private var isAdsSDKReady = false
 
     init() {
         let module = SakuttoSplitRouter.assembleModule()
         _presenter = StateObject(wrappedValue: module.presenter)
         _adsController = StateObject(wrappedValue: module.adsController)
-        bannerAdUnitID = module.bannerAdUnitID
     }
 
     var body: some Scene {
@@ -33,6 +32,8 @@ struct SakuttoSplitApp: App {
             )
             .task {
                 await MobileAds.shared.start()
+                await AdConfiguration.prepare()
+                bannerAdUnitID = await AdConfiguration.resolvedBannerAdUnitID()
                 isAdsSDKReady = true
                 await adsController.startLoadingIfNeeded()
             }

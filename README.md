@@ -41,7 +41,7 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 - **Ads**: 資格判定は `AdEligibility`、広告オフ期限は `AdFreeStore`（UserDefaults）。`GoogleMobileAds` の import は App / `AdBannerView` / `AdsController` のみ。計算 Presenter は広告 SDK を知らない。
 - **Session**: 前回会計・メンバーセット・直近 5 件の履歴・オファー消費・通知プロンプト済みは `BillSessionStore`（UserDefaults、`session.*`）。Presenter は Store に依存し、SDK も `UserNotifications` も import しない。
 - **Reminders**: 発火時刻は `UnpaidReminderSchedule`。本番の予約は `UnpaidReminderScheduler` のみが `UserNotifications` を import する。テストは Null / Spy。
-- **Config**: 広告ユニット ID（`AdConfiguration`。DEBUG は Google テスト ID、Release は本番 3 ID）、入力上限（`InputLimits`）、表示用円フォーマット（`YenFormatting`。入力・Snapshot の正本は数字文字列のまま）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
+- **Config**: 広告ユニット ID（`AdConfiguration`。DEBUG と TestFlight は Google テスト ID、App Store 本番だけ本番 3 ID）、入力上限（`InputLimits`）、表示用円フォーマット（`YenFormatting`。入力・Snapshot の正本は数字文字列のまま）。人数は 1...999（空欄・0・非数字は UI で `"1"` に正規化）。
 
 プロトコルは `SakuttoSplitContract.swift` に集約し、Presenter / Interactor はプロトコル経由で差し替えできるようにしています。
 
@@ -62,7 +62,7 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 - **インタースティシャル**: 精算完了の確認を経た成功直後だけ。起動・シェア・チェック・入力・バックグラウンド復帰・確認キャンセルでは出さない。起動から 15 秒未満、未 load、このプロセスで既に 1 回出した、広告オフ中は出さず、リセットだけ行う。待ちダイアログは出さない。
 - **リワード**: 右上 Menu の「今日の広告をオフ」。最後まで見ると 24 時間、バナーとインタースティシャルの両方を止める。途中閉じでは付与しない。未 load なら「広告を読み込めませんでした」と短く伝え、落とさない。編成の保存枠を増やす動画は Menu の保存からで、広告オフは付かない。
 - **出さないもの**: App Open、起動時全画面、シェア前後の全画面、ATT ダイアログ（v2.0.0 は非パーソナライズ）。
-- **ID**: DEBUG は Google 公式テスト ID。Release は AdMob 本番 3 ID（バナー / インタースティシャル / リワード）。`GADApplicationIdentifier` は変えない。
+- **ID**: DEBUG と TestFlight は Google 公式テスト ID。App Store 本番配信だけ AdMob 本番 3 ID（バナー / インタースティシャル / リワード）。`GADApplicationIdentifier` は変えない。
 
 ## 会計の継続
 今夜の会計が消えないことと、よく使う編成を次も一発で出せることを、広告の隣に置く。
