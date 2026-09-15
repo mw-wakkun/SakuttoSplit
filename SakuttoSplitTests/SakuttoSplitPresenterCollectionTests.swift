@@ -115,6 +115,36 @@ final class SakuttoSplitPresenterCollectionTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsBefore)
     }
 
+    func testDidTapMarkAllCollectionPaid_MarksEverySeatIncludingSingleSeatGroups() {
+        let setup = makeValidDefaultPresenter()
+        let presenter = setup.presenter
+        let spy = setup.spy
+        let callsBefore = spy.calculateCallCount
+        let shareBefore = presenter.viewState.shareText
+        XCTAssertEqual(presenter.collectionState.seats.map(\.label).first, "部長 1")
+
+        presenter.didTapMarkAllCollectionPaid()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState.shareText, shareBefore)
+        XCTAssertTrue(presenter.collectionState.seats.allSatisfy(\.isPaid))
+        XCTAssertEqual(presenter.collectionState.seats.count, 5)
+    }
+
+    func testDidTapMarkAllCollectionPaid_WhenAlreadyAllPaid_IsNoOp() {
+        let setup = makeValidDefaultPresenter()
+        let presenter = setup.presenter
+        let spy = setup.spy
+        presenter.didTapMarkAllCollectionPaid()
+        let before = presenter.collectionState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapMarkAllCollectionPaid()
+
+        XCTAssertEqual(presenter.collectionState, before)
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+    }
+
     func testDidTapToggleCollectionSeat_UnknownID_DoesNotChangeState() {
         let setup = makeValidDefaultPresenter()
         let presenter = setup.presenter

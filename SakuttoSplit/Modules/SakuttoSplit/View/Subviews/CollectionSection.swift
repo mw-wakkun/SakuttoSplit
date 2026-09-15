@@ -14,7 +14,7 @@ struct CollectionSection: View {
     let unpaidShareText: String
     let isUnpaidShareEnabled: Bool
     var onToggle: (CollectionSeatID) -> Void
-    var onMarkGroupPaid: (UUID) -> Void
+    var onMarkAllPaid: () -> Void
     @State private var haptics = CollectionHaptics()
 
     var body: some View {
@@ -26,18 +26,16 @@ struct CollectionSection: View {
                     toggleSeat(seat)
                 }
             }
+        }
 
-            if group.seats.count >= 2 {
-                Button {
-                    markGroupPaid(group.groupID)
-                } label: {
-                    Text("collection.mark_group_paid")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .disabled(group.seats.allSatisfy(\.isPaid))
-                .opacity(group.seats.allSatisfy(\.isPaid) ? 0.45 : 1)
+        if seats.count >= 2 {
+            Button(action: markAllPaid) {
+                Text("collection.mark_group_paid")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.bordered)
+            .disabled(seats.allSatisfy(\.isPaid))
+            .opacity(seats.allSatisfy(\.isPaid) ? 0.45 : 1)
         }
 
         UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
@@ -63,10 +61,9 @@ struct CollectionSection: View {
         }
     }
 
-    private func markGroupPaid(_ groupID: UUID) {
-        let groupSeats = seats.filter { $0.id.groupID == groupID }
-        let hadUnpaid = groupSeats.contains { !$0.isPaid }
-        onMarkGroupPaid(groupID)
+    private func markAllPaid() {
+        let hadUnpaid = seats.contains { !$0.isPaid }
+        onMarkAllPaid()
         if hadUnpaid {
             haptics.success()
         }
@@ -214,7 +211,7 @@ struct UnpaidShareButton: View {
                 """,
                 isUnpaidShareEnabled: true,
                 onToggle: { _ in },
-                onMarkGroupPaid: { _ in }
+                onMarkAllPaid: {}
             )
         }
     }
@@ -228,7 +225,7 @@ struct UnpaidShareButton: View {
                 unpaidShareText: "",
                 isUnpaidShareEnabled: false,
                 onToggle: { _ in },
-                onMarkGroupPaid: { _ in }
+                onMarkAllPaid: {}
             )
         }
     }

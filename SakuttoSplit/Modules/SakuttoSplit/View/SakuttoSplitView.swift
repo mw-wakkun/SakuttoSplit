@@ -89,7 +89,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                                 unpaidShareText: presenter.unpaidShareText,
                                 isUnpaidShareEnabled: presenter.isUnpaidShareEnabled,
                                 onToggle: { presenter.didTapToggleCollectionSeat(id: $0) },
-                                onMarkGroupPaid: { presenter.didTapMarkGroupCollectionPaid(groupID: $0) }
+                                onMarkAllPaid: { presenter.didTapMarkAllCollectionPaid() }
                             )
                         }
                     }

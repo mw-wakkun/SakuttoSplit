@@ -46,6 +46,8 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didTapToggleCollectionSeat(id: CollectionSeatID)
     /// そのグループの席をすべて済にする。計算しない。すでに全員済なら何もしない
     func didTapMarkGroupCollectionPaid(groupID: UUID)
+    /// 回収ボードの全席を済にする。計算しない。すでに全員済なら何もしない
+    func didTapMarkAllCollectionPaid()
     func didTapSaveMemberSet(name: String)
     func didTapOpenMemberSetSheet()
     func didTapCloseMemberSetSheet()

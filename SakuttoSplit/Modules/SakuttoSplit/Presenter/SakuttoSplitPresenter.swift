@@ -202,6 +202,16 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         setCollectionState(next)
     }
 
+    /// 回収ボードの全席を済にする。計算しない。すでに全員済なら何もしない
+    func didTapMarkAllCollectionPaid() {
+        var next = collectionState
+        guard next.seats.contains(where: { !$0.isPaid }) else { return }
+        for index in next.seats.indices {
+            next.seats[index].isPaid = true
+        }
+        setCollectionState(next)
+    }
+
     /// 空き枠があるときだけ編成を保存する。総額は持たない。計算は走らせない
     func didTapSaveMemberSet(name: String) {
         guard !viewState.groups.isEmpty else { return }
