@@ -1,8 +1,11 @@
-app_identifier("io.github.mw-wakkun.SakuttoSplit") # The bundle identifier of your app
-apple_id("abc123.wkwk.321cba@icloud.com") # Your Apple Developer Portal username
+app_identifier("io.github.mw-wakkun.SakuttoSplit")
 
-itc_team_id("128871705") # App Store Connect Team ID
-team_id("H6KKP4L92Z") # Developer Portal Team ID
+# 認証は App Store Connect API Key (.p8) に移行済みのため、Apple ID は使用しません。
+# （Fastfile の fetch_api_key レーンが ASC_KEY_* 環境変数から認証情報を組み立てます）
+# apple_id("abc123.wkwk.321cba@icloud.com")
+
+itc_team_id("128871705")
+team_id("H6KKP4L92Z")
 
 # For more information about the Appfile, see:
 #     https://docs.fastlane.tools/advanced/#appfile

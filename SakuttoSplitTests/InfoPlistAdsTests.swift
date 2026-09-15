@@ -32,8 +32,8 @@ final class InfoPlistAdsTests: XCTestCase {
         XCTAssertNil(appInfo["NSUserNotificationsUsageDescription"])
     }
 
-    func testMarketingVersion_Is2_1_0() {
-        XCTAssertEqual(appInfo["CFBundleShortVersionString"] as? String, "2.1.0")
+    func testMarketingVersion_Is2_0_0() {
+        XCTAssertEqual(appInfo["CFBundleShortVersionString"] as? String, "2.0.0")
     }
 
     private var appInfo: [String: Any] {

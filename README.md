@@ -110,3 +110,23 @@ View は描画と Intent の転送だけを行い、判断・正規化・計算�
 
 ## 開発者
 - mw-wakkun
+
+## 配信
+
+SakuttoSeat と同じ Fastlane 構成。認証は App Store Connect API Key（`.p8`）。Apple ID ログインは使わない。
+
+1. `fastlane/.env.example` を `fastlane/.env` にコピーし、`ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_FILEPATH` を埋める（`.env` は Git 管理外）
+2. TestFlight（内部テスター、ビルド番号だけ +1、Git 操作なし）:
+
+```sh
+bundle exec fastlane ios beta
+```
+
+3. App Store 申請用アップロード（版指定、タグと GitHub Release まで）:
+
+```sh
+bundle exec fastlane ios release version:2.0.0
+```
+
+再アップロードだけするときは `skip_increment:true`。同一ビルド番号の再送は App Store Connect が拒否する。
+TestFlight の広告は Google 公式テスト ID。本番広告は App Store 配信だけ。
