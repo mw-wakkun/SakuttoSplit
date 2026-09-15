@@ -25,6 +25,11 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     var showsResumeCard: Bool { get }
     /// initial ではなく lastBill があるときだけ左上復元を出す
     var showsRestoreToolbar: Bool { get }
+    /// セット 0・空き枠あり・この会計でメインシェア済み・未消費のときだけ
+    var showsMemberSetOffer: Bool { get }
+    /// 総額・端数・グループの中身が起動時と同じ。履歴の dirty 判定に使う
+    var isInitialInput: Bool { get }
+    var reminderScheduler: any UnpaidReminderScheduling { get }
     func didChangeTotalAmount(_ text: String)
     func didChangeRoundingUnit(_ unit: RoundingUnit)
     func didChangeGroupName(id: UUID, name: String)
@@ -51,6 +56,16 @@ protocol SakuttoSplitPresenterProtocol: ObservableObject {
     func didUnlockMemberSetSlot()
     /// 保存名 Alert を出したあと、chrome のフラグを下ろす
     func didConsumeSaveMemberSetNamePrompt()
+    func didPerformMainShare()
+    func didDismissMemberSetOffer()
+    func didTapOpenHistorySheet()
+    func didTapCloseHistorySheet()
+    func didTapRestoreHistory(id: UUID)
+    func didTapStartHistoryComposition(id: UUID)
+    func didTapUndoHistoryComposition()
+    func didTapDeleteHistory(id: UUID)
+    func didConsumeUnpaidReminderPrompt()
+    func didCompleteUnpaidReminderAuthorization(granted: Bool)
 }
 
 /// 割り勘計算のユースケース。具象実装を差し替え可能にする

@@ -20,6 +20,21 @@ final class CollectionSectionTests: XCTestCase {
         XCTAssertFalse(ShareResultButton(shareText: Self.mainReceipt, isEnabled: false).isEnabled)
     }
 
+    func testShareResultButton_IsEquatableByShareTextAndEnabled_IgnoresClosure() {
+        XCTAssertEqual(
+            ShareResultButton(shareText: "a", isEnabled: true, onShareTapped: {}),
+            ShareResultButton(shareText: "a", isEnabled: true, onShareTapped: { _ = 1 })
+        )
+        XCTAssertNotEqual(
+            ShareResultButton(shareText: "a", isEnabled: true),
+            ShareResultButton(shareText: "b", isEnabled: true)
+        )
+        XCTAssertNotEqual(
+            ShareResultButton(shareText: "a", isEnabled: true),
+            ShareResultButton(shareText: "a", isEnabled: false)
+        )
+    }
+
     private static let mainReceipt = """
     本日のお会計
     総額  35,000円

@@ -12,8 +12,12 @@ struct BillSessionStore: BillSessionStoring {
     static let lastBillKey = "session.lastBill"
     static let memberSetsKey = "session.memberSets"
     static let slotCountKey = "session.memberSetSlotCount"
+    static let billHistoryKey = "session.billHistory"
+    static let memberSetOfferConsumedKey = "session.memberSetOfferConsumed"
+    static let didPromptUnpaidReminderKey = "session.didPromptUnpaidReminder"
     static let minSlotCount = 1
     static let maxSlotCount = 3
+    static let maxHistoryCount = 5
 
     private let defaults: UserDefaults
     private let encoder = JSONEncoder()
@@ -31,9 +35,11 @@ struct BillSessionStore: BillSessionStoring {
     }
 
     func saveLastBill(_ snapshot: BillSnapshot) {
-        guard lastBill != snapshot else { return }
-        guard let data = encode(snapshot) else { return }
-        defaults.set(data, forKey: Self.lastBillKey)
+        if lastBill != snapshot {
+            guard let data = encode(snapshot) else { return }
+            defaults.set(data, forKey: Self.lastBillKey)
+        }
+        persistHistory(BillHistoryEntry.upserting(snapshot, into: billHistory))
     }
 
     func clearLastBill() {
@@ -82,9 +88,40 @@ struct BillSessionStore: BillSessionStoring {
         return true
     }
 
+    var billHistory: [BillHistoryEntry] {
+        guard let data = defaults.data(forKey: Self.billHistoryKey) else { return [] }
+        guard let entries = try? decoder.decode([BillHistoryEntry].self, from: data) else { return [] }
+        return entries.filter { $0.isCurrentSchema && $0.snapshot.isReadableSchema }
+    }
+
+    func deleteHistoryEntry(id: UUID) {
+        persistHistory(billHistory.filter { $0.id != id })
+    }
+
+    var memberSetOfferConsumed: Bool {
+        defaults.bool(forKey: Self.memberSetOfferConsumedKey)
+    }
+
+    func markMemberSetOfferConsumed() {
+        defaults.set(true, forKey: Self.memberSetOfferConsumedKey)
+    }
+
+    var didPromptUnpaidReminder: Bool {
+        defaults.bool(forKey: Self.didPromptUnpaidReminderKey)
+    }
+
+    func markDidPromptUnpaidReminder() {
+        defaults.set(true, forKey: Self.didPromptUnpaidReminderKey)
+    }
+
     private func persistMemberSets(_ sets: [MemberSet]) {
         guard let data = encode(sets) else { return }
         defaults.set(data, forKey: Self.memberSetsKey)
+    }
+
+    private func persistHistory(_ history: [BillHistoryEntry]) {
+        guard let data = encode(history) else { return }
+        defaults.set(data, forKey: Self.billHistoryKey)
     }
 
     private func encode<T: Encodable>(_ value: T) -> Data? {

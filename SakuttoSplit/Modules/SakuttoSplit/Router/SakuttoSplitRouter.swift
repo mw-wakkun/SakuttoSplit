@@ -28,7 +28,8 @@ enum SakuttoSplitRouter {
         let interactor = SakuttoSplitInteractor()
         let presenter = SakuttoSplitPresenter(
             interactor: interactor,
-            sessionStore: BillSessionStore()
+            sessionStore: BillSessionStore(),
+            reminderScheduler: UnpaidReminderScheduler()
         )
         let adsController = AdsController(
             interstitialAdUnitID: adConfiguration.interstitialAdUnitID,

@@ -18,8 +18,11 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     private let interactor: SakuttoSplitInteractorProtocol
     private let sessionStore: any BillSessionStoring
+    let reminderScheduler: any UnpaidReminderScheduling
     private var cachedUnpaidShareText = ""
     private var cachedIsUnpaidShareEnabled = false
+    /// この会計でメインシェアを押したか。Disk には書かない。精算で落ちる
+    private var hasPerformedMainShareThisBill = false
 
     var unpaidShareText: String { cachedUnpaidShareText }
 
@@ -39,8 +42,23 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         sessionChrome.hasLastBill && !Self.matchesInitialInput(viewState)
     }
 
+    var isInitialInput: Bool {
+        Self.matchesInitialInput(viewState)
+    }
+
+    var showsMemberSetOffer: Bool {
+        sessionStore.memberSets.isEmpty
+            && sessionChrome.hasEmptyMemberSetSlot
+            && hasPerformedMainShareThisBill
+            && !sessionStore.memberSetOfferConsumed
+            && !viewState.groups.isEmpty
+            && viewState.validationIssue == nil
+    }
+
     /// 編成適用前の groups + roundingUnit。通常の applyUpdate で捨てる
     private var memberSetUndo: MemberSetUndo?
+    /// 履歴の「同じ編成で始める」の取り消し。総額も含む
+    private var historyCompositionUndo: HistoryCompositionUndo?
 
     convenience init(interactor: SakuttoSplitInteractorProtocol) {
         self.init(
@@ -52,26 +70,31 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 
     convenience init(
         interactor: SakuttoSplitInteractorProtocol,
-        sessionStore: any BillSessionStoring
+        sessionStore: any BillSessionStoring,
+        reminderScheduler: any UnpaidReminderScheduling = NullUnpaidReminderScheduler()
     ) {
-        self.init(interactor: interactor, initialState: .initial, sessionStore: sessionStore)
+        self.init(
+            interactor: interactor,
+            initialState: .initial,
+            sessionStore: sessionStore,
+            reminderScheduler: reminderScheduler
+        )
     }
 
     init(
         interactor: SakuttoSplitInteractorProtocol,
         initialState: SakuttoSplitViewState,
-        sessionStore: any BillSessionStoring
+        sessionStore: any BillSessionStoring,
+        reminderScheduler: any UnpaidReminderScheduling = NullUnpaidReminderScheduler()
     ) {
         self.interactor = interactor
         self.sessionStore = sessionStore
+        self.reminderScheduler = reminderScheduler
         var state = initialState
         state.groups = Self.normalizingGroups(state.groups)
         Self.applyCalculation(to: &state, interactor: interactor)
         self.viewState = state
-        self.sessionChrome = makeSessionChrome(
-            isMemberSetSheetPresented: false,
-            needsSaveMemberSetNamePrompt: false
-        )
+        self.sessionChrome = makeSessionChrome()
         reconcileCollection()
         refreshUnpaidShareCache()
     }
@@ -139,6 +162,8 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     func didTapSettleComplete() {
         guard viewState.validationIssue == nil else { return }
         saveLastBillIfValid()
+        reminderScheduler.sync(unpaidCount: 0)
+        hasPerformedMainShareThisBill = false
         applyUpdate { $0 = .initial }
     }
 
@@ -190,6 +215,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
             groups: viewState.groups
         )
         guard sessionStore.saveMemberSet(memberSet) else { return }
+        consumeMemberSetOfferIfNeeded()
         refreshSessionChrome()
     }
 
@@ -230,19 +256,93 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     /// リワード完了時だけ枠を 1 つ増やす。既に上限なら何もしない
     func didUnlockMemberSetSlot() {
         guard sessionStore.unlockExtraSlot() else { return }
-        var next = makeSessionChrome(
-            isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented,
-            needsSaveMemberSetNamePrompt: false
-        )
-        if next.hasEmptyMemberSetSlot {
-            next.needsSaveMemberSetNamePrompt = true
+        refreshSessionChrome()
+        if sessionChrome.hasEmptyMemberSetSlot {
+            sessionChrome.needsSaveMemberSetNamePrompt = true
         }
-        sessionChrome = next
     }
 
     func didConsumeSaveMemberSetNamePrompt() {
         guard sessionChrome.needsSaveMemberSetNamePrompt else { return }
         sessionChrome.needsSaveMemberSetNamePrompt = false
+    }
+
+    func didPerformMainShare() {
+        guard viewState.isShareEnabled else { return }
+        hasPerformedMainShareThisBill = true
+        if shouldPromptUnpaidReminder {
+            sessionChrome.needsUnpaidReminderPrompt = true
+        }
+    }
+
+    func didDismissMemberSetOffer() {
+        sessionStore.markMemberSetOfferConsumed()
+        refreshSessionChrome()
+    }
+
+    func didTapOpenHistorySheet() {
+        setHistorySheetPresented(true)
+    }
+
+    func didTapCloseHistorySheet() {
+        setHistorySheetPresented(false)
+    }
+
+    /// 履歴の会計を続ける。総額・端数・グループ・済を復元。lastBill も上書き
+    func didTapRestoreHistory(id: UUID) {
+        guard let entry = sessionStore.billHistory.first(where: { $0.id == id }) else { return }
+        applyUpdate(paidSeatKeys: Set(entry.snapshot.paidSeatKeys)) { state in
+            state.totalAmountText = entry.snapshot.totalAmountText
+            state.roundingUnit = entry.snapshot.roundingUnit
+            state.groups = entry.snapshot.groups
+        }
+        sessionStore.saveLastBill(makeSnapshot())
+        setHistorySheetPresented(false)
+        refreshSessionChrome()
+    }
+
+    /// 同じ編成で始める。総額は空、済は空。端数とグループ Draft を載せる
+    func didTapStartHistoryComposition(id: UUID) {
+        guard let entry = sessionStore.billHistory.first(where: { $0.id == id }) else { return }
+        let undo = HistoryCompositionUndo(
+            groups: viewState.groups,
+            roundingUnit: viewState.roundingUnit,
+            totalAmountText: viewState.totalAmountText
+        )
+        applyUpdate(paidSeatKeys: []) { state in
+            state.totalAmountText = ""
+            state.roundingUnit = entry.snapshot.roundingUnit
+            state.groups = entry.snapshot.groups
+        }
+        setHistorySheetPresented(false)
+        historyCompositionUndo = undo
+    }
+
+    func didTapUndoHistoryComposition() {
+        guard let undo = historyCompositionUndo else { return }
+        applyUpdate(paidSeatKeys: []) { state in
+            state.totalAmountText = undo.totalAmountText
+            state.roundingUnit = undo.roundingUnit
+            state.groups = undo.groups
+        }
+    }
+
+    func didTapDeleteHistory(id: UUID) {
+        sessionStore.deleteHistoryEntry(id: id)
+        refreshSessionChrome()
+    }
+
+    func didConsumeUnpaidReminderPrompt() {
+        sessionStore.markDidPromptUnpaidReminder()
+        sessionChrome.needsUnpaidReminderPrompt = false
+    }
+
+    func didCompleteUnpaidReminderAuthorization(granted: Bool) {
+        if granted {
+            reminderScheduler.sync(unpaidCount: collectionState.unpaidSeats.count)
+        } else {
+            reminderScheduler.sync(unpaidCount: 0)
+        }
     }
 
     private func saveLastBillIfValid() {
@@ -252,10 +352,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     }
 
     private func refreshSessionChrome() {
-        let next = makeSessionChrome(
-            isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented,
-            needsSaveMemberSetNamePrompt: sessionChrome.needsSaveMemberSetNamePrompt
-        )
+        let next = makeSessionChrome()
         guard next != sessionChrome else { return }
         sessionChrome = next
     }
@@ -265,18 +362,35 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         sessionChrome.isMemberSetSheetPresented = presented
     }
 
-    private func makeSessionChrome(
-        isMemberSetSheetPresented: Bool,
-        needsSaveMemberSetNamePrompt: Bool
-    ) -> SakuttoSplitSessionChrome {
+    private func setHistorySheetPresented(_ presented: Bool) {
+        guard sessionChrome.isHistorySheetPresented != presented else { return }
+        sessionChrome.isHistorySheetPresented = presented
+    }
+
+    private func consumeMemberSetOfferIfNeeded() {
+        guard !sessionStore.memberSets.isEmpty else { return }
+        sessionStore.markMemberSetOfferConsumed()
+    }
+
+    private var shouldPromptUnpaidReminder: Bool {
+        !collectionState.unpaidSeats.isEmpty
+            && reminderScheduler.authorizationStatus == .notDetermined
+            && !sessionStore.didPromptUnpaidReminder
+    }
+
+    private func makeSessionChrome() -> SakuttoSplitSessionChrome {
         let lastBill = sessionStore.lastBill
         return SakuttoSplitSessionChrome(
             hasLastBill: lastBill != nil,
             lastBillPreview: Self.makeLastBillPreview(from: lastBill),
             memberSets: sessionStore.memberSets,
             slotCount: sessionStore.slotCount,
-            isMemberSetSheetPresented: isMemberSetSheetPresented,
-            needsSaveMemberSetNamePrompt: needsSaveMemberSetNamePrompt
+            isMemberSetSheetPresented: sessionChrome.isMemberSetSheetPresented,
+            needsSaveMemberSetNamePrompt: sessionChrome.needsSaveMemberSetNamePrompt,
+            needsUnpaidReminderPrompt: sessionChrome.needsUnpaidReminderPrompt,
+            isHistorySheetPresented: sessionChrome.isHistorySheetPresented,
+            history: sessionStore.billHistory,
+            hasConsumedMemberSetOffer: sessionStore.memberSetOfferConsumed
         )
     }
 
@@ -330,6 +444,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
     private func setCollectionState(_ next: CollectionState) {
         collectionState = next
         refreshUnpaidShareCache()
+        reminderScheduler.sync(unpaidCount: next.unpaidSeats.count)
     }
 
     private func refreshUnpaidShareCache() {
@@ -364,6 +479,7 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
         guard inputChanged || paidSeatKeys != nil else { return }
         if inputChanged {
             memberSetUndo = nil
+            historyCompositionUndo = nil
             Self.applyCalculation(to: &next, interactor: interactor)
             viewState = next
         }
@@ -446,4 +562,10 @@ final class SakuttoSplitPresenter: SakuttoSplitPresenterProtocol {
 private struct MemberSetUndo: Equatable {
     var groups: [AttendeeGroupDraft]
     var roundingUnit: RoundingUnit
+}
+
+private struct HistoryCompositionUndo: Equatable {
+    var groups: [AttendeeGroupDraft]
+    var roundingUnit: RoundingUnit
+    var totalAmountText: String
 }

@@ -85,8 +85,9 @@ final class SakuttoSplitRouterTests: XCTestCase {
 
         XCTAssertEqual(view.presenter.viewState.groups.count, 2)
         XCTAssertEqual(view.bannerAdUnitID, module.bannerAdUnitID)
-        XCTAssertFalse(view.isAdsSDKReady)
+        XCTAssertEqual(view.isAdsSDKReady, false)
         XCTAssertFalse(view.adsController.isAdFree)
+        XCTAssertTrue(module.presenter.reminderScheduler is UnpaidReminderScheduler)
     }
 }
 

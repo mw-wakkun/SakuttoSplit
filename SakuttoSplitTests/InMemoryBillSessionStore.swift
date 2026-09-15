@@ -14,6 +14,9 @@ final class InMemoryBillSessionStore: BillSessionStoring {
     private(set) var memberSets: [MemberSet] = []
     private(set) var slotCount: Int
     private(set) var saveLastBillCallCount = 0
+    private(set) var billHistory: [BillHistoryEntry] = []
+    private(set) var memberSetOfferConsumed = false
+    private(set) var didPromptUnpaidReminder = false
 
     init(slotCount: Int = BillSessionStore.minSlotCount) {
         self.slotCount = min(
@@ -25,6 +28,7 @@ final class InMemoryBillSessionStore: BillSessionStoring {
     func saveLastBill(_ snapshot: BillSnapshot) {
         saveLastBillCallCount += 1
         lastBill = snapshot
+        billHistory = BillHistoryEntry.upserting(snapshot, into: billHistory)
     }
 
     func clearLastBill() {
@@ -51,5 +55,17 @@ final class InMemoryBillSessionStore: BillSessionStoring {
         guard slotCount < BillSessionStore.maxSlotCount else { return false }
         slotCount += 1
         return true
+    }
+
+    func deleteHistoryEntry(id: UUID) {
+        billHistory.removeAll { $0.id == id }
+    }
+
+    func markMemberSetOfferConsumed() {
+        memberSetOfferConsumed = true
+    }
+
+    func markDidPromptUnpaidReminder() {
+        didPromptUnpaidReminder = true
     }
 }

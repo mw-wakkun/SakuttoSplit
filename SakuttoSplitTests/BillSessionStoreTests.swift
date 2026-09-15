@@ -114,6 +114,132 @@ final class BillSessionStoreTests: XCTestCase {
         XCTAssertEqual(store.lastBill, snapshot)
     }
 
+    // MARK: - history / flags
+
+    func testBillHistory_BrokenData_ReturnsEmpty_KeepsLastBill() {
+        let snapshot = makeSnapshot(totalAmountText: "35000")
+        store.saveLastBill(snapshot)
+        defaults.set(Data("not-json".utf8), forKey: BillSessionStore.billHistoryKey)
+
+        XCTAssertTrue(store.billHistory.isEmpty)
+        XCTAssertEqual(store.lastBill, snapshot)
+    }
+
+    func testBillHistory_UnknownSnapshotSchema_IsDropped() throws {
+        let groupID = UUID()
+        let entry = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: BillSnapshot(
+                totalAmountText: "1000",
+                roundingUnit: .hundred,
+                groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "1")],
+                schemaVersion: 3
+            )
+        )
+        defaults.set(try JSONEncoder().encode([entry]), forKey: BillSessionStore.billHistoryKey)
+
+        XCTAssertTrue(store.billHistory.isEmpty)
+    }
+
+    func testSaveLastBill_SameGroupIDs_UpsertsFirstEntry() {
+        let groupID = UUID()
+        let first = BillSnapshot(
+            totalAmountText: "35000",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "4")],
+            paidSeatKeys: []
+        )
+        store.saveLastBill(first)
+        let historyID = store.billHistory[0].id
+        let paidKey = CollectionSeatID(groupID: groupID, index: 0).rawValue
+        let updated = BillSnapshot(
+            totalAmountText: "35000",
+            roundingUnit: .hundred,
+            groups: first.groups,
+            paidSeatKeys: [paidKey]
+        )
+
+        store.saveLastBill(updated)
+
+        XCTAssertEqual(store.billHistory.count, 1)
+        XCTAssertEqual(store.billHistory[0].id, historyID)
+        XCTAssertEqual(store.billHistory[0].snapshot.paidSeatKeys, [paidKey])
+        XCTAssertEqual(store.lastBill?.paidSeatKeys, [paidKey])
+    }
+
+    func testSaveLastBill_DifferentGroupIDs_InsertsAndCapsAtFive() {
+        let ids = (0..<6).map { _ in UUID() }
+        for (index, groupID) in ids.enumerated() {
+            store.saveLastBill(
+                BillSnapshot(
+                    totalAmountText: "\(index + 1)000",
+                    roundingUnit: .hundred,
+                    groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "1")]
+                )
+            )
+        }
+
+        XCTAssertEqual(store.billHistory.count, 5)
+        XCTAssertEqual(store.billHistory.map { $0.snapshot.groups[0].id }, Array(ids.reversed().prefix(5)))
+        XCTAssertEqual(store.lastBill?.groups.map(\.id), [ids[5]])
+    }
+
+    func testClearLastBill_DoesNotClearHistory() {
+        store.saveLastBill(makeSnapshot(totalAmountText: "35000"))
+        XCTAssertEqual(store.billHistory.count, 1)
+
+        store.clearLastBill()
+
+        XCTAssertNil(store.lastBill)
+        XCTAssertEqual(store.billHistory.count, 1)
+    }
+
+    func testDeleteHistoryEntry_RemovesOnlyThatEntry() {
+        let firstID = UUID()
+        let secondID = UUID()
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "1000",
+                roundingUnit: .hundred,
+                groups: [AttendeeGroupDraft(id: firstID, name: "A", countText: "1")]
+            )
+        )
+        store.saveLastBill(
+            BillSnapshot(
+                totalAmountText: "2000",
+                roundingUnit: .hundred,
+                groups: [AttendeeGroupDraft(id: secondID, name: "B", countText: "1")]
+            )
+        )
+        let removeID = store.billHistory[0].id
+
+        store.deleteHistoryEntry(id: removeID)
+
+        XCTAssertEqual(store.billHistory.count, 1)
+        XCTAssertEqual(store.billHistory[0].snapshot.groups.map(\.id), [firstID])
+        XCTAssertEqual(store.lastBill?.groups.map(\.id), [secondID])
+    }
+
+    func testMemberSetOfferConsumed_DefaultsFalse_ThenPersistsTrue() {
+        XCTAssertFalse(store.memberSetOfferConsumed)
+
+        store.markMemberSetOfferConsumed()
+
+        XCTAssertTrue(store.memberSetOfferConsumed)
+        let reloaded = BillSessionStore(defaults: defaults)
+        XCTAssertTrue(reloaded.memberSetOfferConsumed)
+    }
+
+    func testDidPromptUnpaidReminder_DefaultsFalse_ThenPersistsTrue() {
+        XCTAssertFalse(store.didPromptUnpaidReminder)
+
+        store.markDidPromptUnpaidReminder()
+
+        XCTAssertTrue(store.didPromptUnpaidReminder)
+        let reloaded = BillSessionStore(defaults: defaults)
+        XCTAssertTrue(reloaded.didPromptUnpaidReminder)
+    }
+
     // MARK: - member sets / slots
 
     func testSlotCount_DefaultsToOne() {

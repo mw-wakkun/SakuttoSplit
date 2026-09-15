@@ -24,4 +24,16 @@ protocol BillSessionStoring {
     /// 上限未満なら +1 して true。既に 3 なら false
     @discardableResult
     func unlockExtraSlot() -> Bool
+
+    /// 新しい順。壊れた JSON は空。読めない snapshot は捨てる
+    var billHistory: [BillHistoryEntry] { get }
+    func deleteHistoryEntry(id: UUID)
+
+    /// 未設定は false
+    var memberSetOfferConsumed: Bool { get }
+    func markMemberSetOfferConsumed()
+
+    /// 未設定は false。インストールあたり 1 回
+    var didPromptUnpaidReminder: Bool { get }
+    func markDidPromptUnpaidReminder()
 }

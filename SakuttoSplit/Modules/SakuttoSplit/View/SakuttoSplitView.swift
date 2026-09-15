@@ -22,10 +22,16 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     @State private var isRewardSlotPresented = false
     @State private var isSlotFullPresented = false
     @State private var memberSetNameDraft = ""
+    @State private var saveMemberSetUsesOfferDefault = false
     @State private var expandedPaymentGroupIDs: Set<UUID> = []
     @State private var isSettleConfirmPresented = false
     @State private var isMemberSetUndoBannerPresented = false
     @State private var memberSetUndoBannerHideTask: Task<Void, Never>?
+    @State private var undoBannerUsesHistoryComposition = false
+    @State private var pendingHistoryRestoreID: UUID?
+    @State private var pendingHistoryCompositionID: UUID?
+    @State private var isHistoryRestoreConfirmPresented = false
+    @State private var isHistoryCompositionConfirmPresented = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -72,6 +78,12 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                     if presenter.viewState.validationIssue == nil,
                        !presenter.collectionState.seats.isEmpty {
                         Section("section.collection") {
+                            if presenter.showsMemberSetOffer {
+                                MemberSetOfferCard(
+                                    onSave: presentOfferSaveNamePrompt,
+                                    onDismiss: { presenter.didDismissMemberSetOffer() }
+                                )
+                            }
                             CollectionSection(
                                 seats: presenter.collectionState.seats,
                                 unpaidShareText: presenter.unpaidShareText,
@@ -153,7 +165,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         .alert("set.save", isPresented: $isSaveMemberSetPresented) {
             TextField("set.name_placeholder", text: $memberSetNameDraft)
             Button("set.save") {
-                presenter.didTapSaveMemberSet(name: memberSetNameDraft)
+                presenter.didTapSaveMemberSet(name: resolvedSaveMemberSetName)
             }
             Button(role: .cancel) {}
         }
@@ -184,6 +196,15 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 onClose: { presenter.didTapCloseMemberSetSheet() }
             )
         }
+        .sheet(isPresented: historySheetBinding) {
+            BillHistorySheet(
+                entries: presenter.sessionChrome.history,
+                onContinue: restoreHistoryTapped,
+                onStartComposition: startHistoryCompositionTapped,
+                onDelete: { presenter.didTapDeleteHistory(id: $0) },
+                onClose: { presenter.didTapCloseHistorySheet() }
+            )
+        }
         .confirmationDialog(
             "settle.confirm_title",
             isPresented: $isSettleConfirmPresented,
@@ -193,6 +214,56 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             Button(role: .cancel) {}
         } message: {
             Text("settle.confirm_message")
+        }
+        .alert(
+            "notify.unpaid_title",
+            isPresented: unpaidReminderPromptBinding
+        ) {
+            Button("notify.unpaid_allow") {
+                presenter.didConsumeUnpaidReminderPrompt()
+                let presenter = self.presenter
+                Task { @MainActor in
+                    let granted = await presenter.reminderScheduler.requestAuthorizationIfNeeded()
+                    presenter.didCompleteUnpaidReminderAuthorization(granted: granted)
+                }
+            }
+            Button("notify.unpaid_later", role: .cancel) {
+                presenter.didConsumeUnpaidReminderPrompt()
+            }
+        } message: {
+            Text("notify.unpaid_message")
+        }
+        .alert(
+            "history.restore_confirm_title",
+            isPresented: $isHistoryRestoreConfirmPresented
+        ) {
+            Button("session.restore") {
+                if let id = pendingHistoryRestoreID {
+                    presenter.didTapRestoreHistory(id: id)
+                }
+                pendingHistoryRestoreID = nil
+            }
+            Button(role: .cancel) {
+                pendingHistoryRestoreID = nil
+            }
+        } message: {
+            Text("history.restore_confirm_message")
+        }
+        .alert(
+            "history.composition_confirm_title",
+            isPresented: $isHistoryCompositionConfirmPresented
+        ) {
+            Button("history.start_composition") {
+                if let id = pendingHistoryCompositionID {
+                    applyHistoryComposition(id: id)
+                }
+                pendingHistoryCompositionID = nil
+            }
+            Button(role: .cancel) {
+                pendingHistoryCompositionID = nil
+            }
+        } message: {
+            Text("history.composition_confirm_message")
         }
     }
 
@@ -261,10 +332,26 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     }
 
     private func presentSaveNamePrompt() {
+        saveMemberSetUsesOfferDefault = false
         memberSetNameDraft = String(
             localized: "set.default_name \(presenter.sessionChrome.memberSets.count + 1)"
         )
         isSaveMemberSetPresented = true
+    }
+
+    private func presentOfferSaveNamePrompt() {
+        guard !presenter.sessionChrome.needsUnpaidReminderPrompt else { return }
+        saveMemberSetUsesOfferDefault = true
+        memberSetNameDraft = String(localized: "set.offer_default_name")
+        isSaveMemberSetPresented = true
+    }
+
+    private var resolvedSaveMemberSetName: String {
+        let trimmed = memberSetNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if saveMemberSetUsesOfferDefault, trimmed.isEmpty {
+            return String(localized: "set.offer_default_name")
+        }
+        return memberSetNameDraft
     }
 
     private func presentExtraSlotRewarded() {
@@ -292,7 +379,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         focusedField = nil
         presenter.didTapCloseMemberSetSheet()
         presenter.didTapApplyMemberSet(id: id)
-        presentMemberSetUndoBanner()
+        presentUndoBanner(usesHistoryComposition: false)
     }
 
     private var memberSetSheetBinding: Binding<Bool> {
@@ -308,6 +395,55 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         )
     }
 
+    private var historySheetBinding: Binding<Bool> {
+        Binding(
+            get: { presenter.sessionChrome.isHistorySheetPresented },
+            set: { presented in
+                if presented {
+                    presenter.didTapOpenHistorySheet()
+                } else {
+                    presenter.didTapCloseHistorySheet()
+                }
+            }
+        )
+    }
+
+    private var unpaidReminderPromptBinding: Binding<Bool> {
+        Binding(
+            get: { presenter.sessionChrome.needsUnpaidReminderPrompt },
+            set: { presented in
+                if !presented, presenter.sessionChrome.needsUnpaidReminderPrompt {
+                    presenter.didConsumeUnpaidReminderPrompt()
+                }
+            }
+        )
+    }
+
+    private func restoreHistoryTapped(id: UUID) {
+        focusedField = nil
+        if presenter.isInitialInput {
+            presenter.didTapRestoreHistory(id: id)
+        } else {
+            pendingHistoryRestoreID = id
+            isHistoryRestoreConfirmPresented = true
+        }
+    }
+
+    private func startHistoryCompositionTapped(id: UUID) {
+        focusedField = nil
+        if presenter.isInitialInput {
+            applyHistoryComposition(id: id)
+        } else {
+            pendingHistoryCompositionID = id
+            isHistoryCompositionConfirmPresented = true
+        }
+    }
+
+    private func applyHistoryComposition(id: UUID) {
+        presenter.didTapStartHistoryComposition(id: id)
+        presentUndoBanner(usesHistoryComposition: true)
+    }
+
     private var moreMenuToolbarItem: some View {
         Menu {
             Section {
@@ -318,6 +454,12 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 Button("set.load") {
                     focusedField = nil
                     presenter.didTapOpenMemberSetSheet()
+                }
+            }
+            Section {
+                Button("history.open") {
+                    focusedField = nil
+                    presenter.didTapOpenHistorySheet()
                 }
             }
             Section {
@@ -340,6 +482,11 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 Label("share.button", systemImage: "square.and.arrow.up")
                     .labelStyle(.iconOnly)
             }
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    presenter.didPerformMainShare()
+                }
+            )
         } else {
             Button("action.next") {
                 focusedField = focusedField?.next(
@@ -361,12 +508,16 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     private var memberSetUndoBanner: some View {
         if isMemberSetUndoBannerPresented {
             HStack {
-                Text("set.applied")
+                Text(undoBannerUsesHistoryComposition ? "history.composition_applied" : "set.applied")
                 Spacer()
                 Button("set.undo") {
                     memberSetUndoBannerHideTask?.cancel()
                     isMemberSetUndoBannerPresented = false
-                    presenter.didTapUndoMemberSetApply()
+                    if undoBannerUsesHistoryComposition {
+                        presenter.didTapUndoHistoryComposition()
+                    } else {
+                        presenter.didTapUndoMemberSetApply()
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -376,8 +527,9 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         }
     }
 
-    private func presentMemberSetUndoBanner() {
+    private func presentUndoBanner(usesHistoryComposition: Bool) {
         memberSetUndoBannerHideTask?.cancel()
+        undoBannerUsesHistoryComposition = usesHistoryComposition
         isMemberSetUndoBannerPresented = true
         memberSetUndoBannerHideTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(4))
@@ -396,7 +548,8 @@ private extension SakuttoSplitView {
         if focusedField == nil {
             ShareResultButton(
                 shareText: presenter.viewState.shareText,
-                isEnabled: presenter.viewState.isShareEnabled
+                isEnabled: presenter.viewState.isShareEnabled,
+                onShareTapped: { presenter.didPerformMainShare() }
             )
         }
     }

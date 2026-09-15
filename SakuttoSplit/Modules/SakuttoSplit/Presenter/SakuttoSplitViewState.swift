@@ -29,15 +29,18 @@ struct SakuttoSplitViewState: Equatable {
 
     var isShareEnabled: Bool { validationIssue == nil }
 
-    static let initial = SakuttoSplitViewState(
-        totalAmountText: "",
-        roundingUnit: .hundred,
-        groups: [
-            AttendeeGroupDraft(name: "部長", countText: "1", mode: .fixed, fixedAmountText: "10000"),
-            AttendeeGroupDraft(name: "一般", countText: "4", mode: .ratio, ratioText: "1.0")
-        ],
-        results: [],
-        difference: 0,
-        validationIssue: .emptyTotalAmount
-    )
+    /// グループ ID はアクセスのたびに作り直す。精算後の次の会計が履歴で上書きされない
+    static var initial: SakuttoSplitViewState {
+        SakuttoSplitViewState(
+            totalAmountText: "",
+            roundingUnit: .hundred,
+            groups: [
+                AttendeeGroupDraft(name: "部長", countText: "1", mode: .fixed, fixedAmountText: "10000"),
+                AttendeeGroupDraft(name: "一般", countText: "4", mode: .ratio, ratioText: "1.0")
+            ],
+            results: [],
+            difference: 0,
+            validationIssue: .emptyTotalAmount
+        )
+    }
 }

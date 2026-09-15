@@ -23,6 +23,10 @@ struct SakuttoSplitSessionChrome: Equatable {
     var isMemberSetSheetPresented = false
     /// リワードで枠が増えたあと、保存名 Alert を出す。出した側が消費する
     var needsSaveMemberSetNamePrompt = false
+    var needsUnpaidReminderPrompt = false
+    var isHistorySheetPresented = false
+    var history: [BillHistoryEntry] = []
+    var hasConsumedMemberSetOffer = false
 
     var hasEmptyMemberSetSlot: Bool {
         memberSets.count < slotCount

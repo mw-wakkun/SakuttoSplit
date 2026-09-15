@@ -11,6 +11,11 @@ import SwiftUI
 struct ShareResultButton: View, Equatable {
     let shareText: String
     let isEnabled: Bool
+    var onShareTapped: () -> Void = {}
+
+    static func == (lhs: ShareResultButton, rhs: ShareResultButton) -> Bool {
+        lhs.shareText == rhs.shareText && lhs.isEnabled == rhs.isEnabled
+    }
 
     var body: some View {
         ShareLink(item: shareText) {
@@ -24,6 +29,12 @@ struct ShareResultButton: View, Equatable {
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.45)
         .background(Color.accentColor)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                guard isEnabled else { return }
+                onShareTapped()
+            }
+        )
     }
 }
 
