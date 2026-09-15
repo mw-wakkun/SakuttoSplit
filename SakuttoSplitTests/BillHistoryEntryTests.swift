@@ -74,6 +74,85 @@ final class BillHistoryEntryTests: XCTestCase {
         XCTAssertEqual(decoded.unpaidCount, 1)
     }
 
+    func testUnpaidCount_GroupWith21People_CollapsesToOneSeat() {
+        let groupID = UUID()
+        let unpaid = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: BillSnapshot(
+                totalAmountText: "21000",
+                roundingUnit: .hundred,
+                groups: [AttendeeGroupDraft(id: groupID, name: "一般", countText: "21")],
+                paidSeatKeys: []
+            )
+        )
+        let paidKey = CollectionSeatID(groupID: groupID, index: 0).rawValue
+        let paid = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: BillSnapshot(
+                totalAmountText: "21000",
+                roundingUnit: .hundred,
+                groups: unpaid.snapshot.groups,
+                paidSeatKeys: [paidKey]
+            )
+        )
+
+        XCTAssertEqual(unpaid.unpaidCount, 1)
+        XCTAssertEqual(paid.unpaidCount, 0)
+    }
+
+    func testUnpaidCount_MixedExpandedAndCollapsedGroups() {
+        let collapsedID = UUID()
+        let expandedID = UUID()
+        let paidExpanded = CollectionSeatID(groupID: expandedID, index: 0).rawValue
+        let entry = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: BillSnapshot(
+                totalAmountText: "50000",
+                roundingUnit: .hundred,
+                groups: [
+                    AttendeeGroupDraft(id: collapsedID, name: "大人数", countText: "21"),
+                    AttendeeGroupDraft(id: expandedID, name: "一般", countText: "4")
+                ],
+                paidSeatKeys: [paidExpanded]
+            )
+        )
+
+        // 21人は席1（未済）+ 展開4席のうち1済 → 未払い 1+3
+        XCTAssertEqual(entry.unpaidCount, 4)
+    }
+
+    func testCompositionPreview_MatchesMemberSetFormat() {
+        let entry = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: BillSnapshot(
+                totalAmountText: "35000",
+                roundingUnit: .hundred,
+                groups: [
+                    AttendeeGroupDraft(name: "部長", countText: "1", mode: .fixed, fixedAmountText: "10000"),
+                    AttendeeGroupDraft(name: "一般", countText: "4", mode: .ratio, ratioText: "1.0")
+                ]
+            )
+        )
+
+        XCTAssertEqual(entry.compositionPreview, "部長 1 / 一般 4 · 100円")
+    }
+
+    func testUpserting_EmptyHistory_InsertsOne() {
+        let groupID = UUID()
+        let now = Date(timeIntervalSince1970: 1)
+
+        let result = BillHistoryEntry.upserting(
+            makeSnapshot(groupID: groupID, totalAmountText: "10000"),
+            into: [],
+            now: now,
+            maxCount: 5
+        )
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].savedAt, now)
+        XCTAssertEqual(result[0].snapshot.groups.map(\.id), [groupID])
+    }
+
     func testUpserting_SameGroupIDs_OverwritesFirstAndKeepsID() {
         let groupID = UUID()
         let originalID = UUID()

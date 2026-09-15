@@ -240,6 +240,30 @@ final class SakuttoSplitPresenterTests: XCTestCase {
         XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
     }
 
+    func testDidChangeGroupCount_UnknownID_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let before = presenter.viewState
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didChangeGroupCount(id: UUID(), countText: "9")
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+        XCTAssertEqual(presenter.viewState, before)
+    }
+
+    func testDidChangeFixedAmount_UnknownID_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(interactor: spy)
+        let before = presenter.viewState
+        let callsAfterInit = spy.calculateCallCount
+
+        presenter.didChangeFixedAmount(id: UUID(), text: "8000")
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterInit)
+        XCTAssertEqual(presenter.viewState, before)
+    }
+
     func testShareText_MatchesPreviousViewFormat() {
         let presenter = SakuttoSplitPresenter(interactor: SakuttoSplitInteractor())
 

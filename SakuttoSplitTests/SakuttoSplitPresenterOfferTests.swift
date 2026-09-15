@@ -132,6 +132,33 @@ final class SakuttoSplitPresenterOfferTests: XCTestCase {
         XCTAssertFalse(presenter.showsMemberSetOffer)
     }
 
+    func testShowsMemberSetOffer_WhenGroupsBecomeEmpty_IsFalse() {
+        let presenter = makeValidPresenter().presenter
+        presenter.didPerformMainShare()
+        XCTAssertTrue(presenter.showsMemberSetOffer)
+
+        for group in presenter.viewState.groups {
+            presenter.didTapRemoveGroup(id: group.id)
+        }
+
+        XCTAssertTrue(presenter.viewState.groups.isEmpty)
+        XCTAssertEqual(presenter.viewState.validationIssue, .noGroups)
+        XCTAssertFalse(presenter.showsMemberSetOffer)
+    }
+
+    func testDidTapSaveMemberSet_EmptyName_UsesDefaultAndConsumesOffer() {
+        let setup = makeValidPresenter()
+        setup.presenter.didPerformMainShare()
+        XCTAssertTrue(setup.presenter.showsMemberSetOffer)
+
+        setup.presenter.didTapSaveMemberSet(name: "   ")
+
+        XCTAssertFalse(setup.presenter.showsMemberSetOffer)
+        XCTAssertTrue(setup.store.memberSetOfferConsumed)
+        XCTAssertEqual(setup.store.memberSets.count, 1)
+        XCTAssertFalse(setup.store.memberSets[0].name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
     private func makeValidPresenter() -> (
         presenter: SakuttoSplitPresenter,
         store: InMemoryBillSessionStore

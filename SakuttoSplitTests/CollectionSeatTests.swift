@@ -116,6 +116,42 @@ final class CollectionSeatTests: XCTestCase {
         XCTAssertEqual(seats.map(\.isPaid), [false, true, false, false])
     }
 
+    func testMakeSeats_CountZero_ReturnsEmpty() {
+        let seats = CollectionSeat.make(
+            groupID: UUID(),
+            name: "欠席",
+            count: 0,
+            amountPerPerson: 1000,
+            expandMaxCount: InputLimits.collectionExpandMaxCount
+        )
+
+        XCTAssertTrue(seats.isEmpty)
+    }
+
+    func testReconcile_MissingResultForGroup_UsesZeroAmount() {
+        let groupID = UUID()
+        let groups = [
+            AttendeeGroupDraft(
+                id: groupID,
+                name: "一般",
+                countText: "2",
+                mode: .ratio,
+                ratioText: "1.0"
+            )
+        ]
+
+        let state = CollectionState.reconcile(
+            groups: groups,
+            results: [],
+            paidSeatKeys: [],
+            expandMaxCount: InputLimits.collectionExpandMaxCount
+        )
+
+        XCTAssertEqual(state.seats.count, 2)
+        XCTAssertTrue(state.seats.allSatisfy { $0.amountPerPerson == 0 })
+        XCTAssertEqual(state.unpaidSeats.count, 2)
+    }
+
     /// 同 groupID の results が 2 件でも trap せず、後勝ちの金額を使う
     func testReconcile_DuplicateResultGroupIDs_DoesNotTrap_UsesLastAmount() {
         let groupID = UUID()

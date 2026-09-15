@@ -59,6 +59,78 @@ final class SakuttoSplitInteractorTests: XCTestCase {
         XCTAssertEqual(result.difference, -200)
     }
 
+    /// 倍率が違うグループは残金を重みで按分する（上司は多め）
+    func testCalculateBill_WeightedRatios_DistributesRemainingByWeight() {
+        let groups = [
+            ratioGroup(name: "部長", count: 1, ratio: 2),
+            ratioGroup(name: "一般", count: 1, ratio: 1)
+        ]
+
+        let result = calculate(totalAmount: 12000, roundingUnit: .hundred, groups: groups)
+
+        XCTAssertEqual(result.results[0].amountPerPerson, 8000)
+        XCTAssertEqual(result.results[0].total, 8000)
+        XCTAssertEqual(result.results[1].amountPerPerson, 4000)
+        XCTAssertEqual(result.results[1].total, 4000)
+        XCTAssertEqual(result.collectedTotal, 12000)
+        XCTAssertEqual(result.difference, 0)
+    }
+
+    /// 人数が複数でも倍率は人数分だけ重みに入る
+    func testCalculateBill_WeightedRatios_CountsPeopleInTotalWeight() {
+        let groups = [
+            ratioGroup(name: "部長", count: 1, ratio: 2),
+            ratioGroup(name: "一般", count: 4, ratio: 1)
+        ]
+
+        let result = calculate(totalAmount: 30000, roundingUnit: .hundred, groups: groups)
+
+        // totalRatio = 2 + 4。部長 (30000/6)*2 = 10000、一般 (30000/6)*1 = 5000
+        XCTAssertEqual(result.results[0].amountPerPerson, 10000)
+        XCTAssertEqual(result.results[0].total, 10000)
+        XCTAssertEqual(result.results[1].amountPerPerson, 5000)
+        XCTAssertEqual(result.results[1].total, 20000)
+        XCTAssertEqual(result.collectedTotal, 30000)
+        XCTAssertEqual(result.difference, 0)
+    }
+
+    /// 端数切り捨て後も倍率比を保ち、不足は切り捨て分だけ
+    func testCalculateBill_WeightedRatios_TruncatesTowardZeroPerPerson() {
+        let groups = [
+            ratioGroup(name: "部長", count: 1, ratio: 2),
+            ratioGroup(name: "一般", count: 1, ratio: 1)
+        ]
+
+        let result = calculate(totalAmount: 10000, roundingUnit: .hundred, groups: groups)
+
+        // (10000/3)*2 = 6666.6... → 6600、(10000/3)*1 = 3333.3... → 3300
+        XCTAssertEqual(result.results[0].amountPerPerson, 6600)
+        XCTAssertEqual(result.results[1].amountPerPerson, 3300)
+        XCTAssertEqual(result.collectedTotal, 9900)
+        XCTAssertEqual(result.difference, -100)
+    }
+
+    /// 固定額を先に引き、残りを小数倍率で按分する
+    func testCalculateBill_FixedPlusWeightedRatio_SubtractsFixedFirst() {
+        let groups = [
+            fixedGroup(name: "部長", count: 1, amount: 10000),
+            ratioGroup(name: "一般", count: 1, ratio: Decimal(string: "1.5")!),
+            ratioGroup(name: "新人", count: 1, ratio: 1)
+        ]
+
+        let result = calculate(totalAmount: 25000, roundingUnit: .hundred, groups: groups)
+
+        // 残金 15000、totalRatio 2.5。一般 9000、新人 6000
+        XCTAssertEqual(result.results[0].amountPerPerson, 10000)
+        XCTAssertEqual(result.results[0].total, 10000)
+        XCTAssertEqual(result.results[1].amountPerPerson, 9000)
+        XCTAssertEqual(result.results[1].total, 9000)
+        XCTAssertEqual(result.results[2].amountPerPerson, 6000)
+        XCTAssertEqual(result.results[2].total, 6000)
+        XCTAssertEqual(result.collectedTotal, 25000)
+        XCTAssertEqual(result.difference, 0)
+    }
+
     // MARK: - 総額のパース（空文字・非数値は呼び出し側で 0）
 
     func testCalculateBill_EmptyTotalAmount_IsTreatedAsZero() {

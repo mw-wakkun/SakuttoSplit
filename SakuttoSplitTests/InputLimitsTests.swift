@@ -15,6 +15,12 @@ final class InputLimitsTests: XCTestCase {
         XCTAssertEqual(InputLimits.sanitizedTotalAmountText(""), "")
     }
 
+    func testSanitizedFixedAmountText_StripsNonDigitsAndCapsAt8() {
+        XCTAssertEqual(InputLimits.sanitizedFixedAmountText("8a000"), "8000")
+        XCTAssertEqual(InputLimits.sanitizedFixedAmountText("12a3456789"), "12345678")
+        XCTAssertEqual(InputLimits.sanitizedFixedAmountText(""), "")
+    }
+
     /// 人数の正本は 1...999。空・0・非数字は "1"、桁除去後にクランプする
     func testSanitizedCountText_ClampsToOneThrough999() {
         XCTAssertEqual(InputLimits.sanitizedCountText(""), "1")

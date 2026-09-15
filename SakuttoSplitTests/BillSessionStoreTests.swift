@@ -313,6 +313,29 @@ final class BillSessionStoreTests: XCTestCase {
         XCTAssertTrue(store.memberSets.isEmpty)
     }
 
+    func testMemberSets_UnknownSchemaVersion_IsDropped() throws {
+        let outdated = MemberSet(
+            name: "古い編成",
+            roundingUnit: .hundred,
+            groups: [AttendeeGroupDraft(name: "部長", countText: "1")],
+            schemaVersion: 2
+        )
+        defaults.set(try JSONEncoder().encode([outdated]), forKey: BillSessionStore.memberSetsKey)
+
+        XCTAssertTrue(store.memberSets.isEmpty)
+    }
+
+    func testBillHistory_UnknownEntrySchema_IsDropped() throws {
+        let entry = BillHistoryEntry(
+            savedAt: Date(timeIntervalSince1970: 1),
+            snapshot: makeSnapshot(totalAmountText: "1000"),
+            schemaVersion: 99
+        )
+        defaults.set(try JSONEncoder().encode([entry]), forKey: BillSessionStore.billHistoryKey)
+
+        XCTAssertTrue(store.billHistory.isEmpty)
+    }
+
     func testSlotCount_StoredFour_ClampsToThree() {
         defaults.set(4, forKey: BillSessionStore.slotCountKey)
 

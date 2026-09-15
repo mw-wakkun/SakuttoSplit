@@ -73,7 +73,97 @@ final class SakuttoSplitPresenterHistoryTests: XCTestCase {
         XCTAssertEqual(presenter.viewState.totalAmountText, "35000")
         XCTAssertTrue(presenter.collectionState.seats.contains { $0.id == paidID && $0.isPaid })
         XCTAssertEqual(store.lastBill?.paidSeatKeys, [paidID.rawValue])
+        XCTAssertEqual(store.lastBill?.totalAmountText, "35000")
         XCTAssertFalse(presenter.sessionChrome.isHistorySheetPresented)
+    }
+
+    func testDidTapRestoreHistory_UnknownID_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        presenter.didChangeTotalAmount("8888")
+        let before = presenter.viewState
+        let lastBillBefore = store.lastBill
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapRestoreHistory(id: UUID())
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState, before)
+        XCTAssertEqual(store.lastBill, lastBillBefore)
+        XCTAssertEqual(store.billHistory.count, 1)
+    }
+
+    func testDidTapStartHistoryComposition_UnknownID_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        presenter.didChangeTotalAmount("8888")
+        let before = presenter.viewState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapStartHistoryComposition(id: UUID())
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState, before)
+    }
+
+    func testDidTapStartHistoryComposition_ThenChangeTotal_DiscardsUndo() throws {
+        let spy = CalculatingSpyInteractor()
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(interactor: spy, sessionStore: store)
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        let entryID = try XCTUnwrap(store.billHistory.first).id
+        presenter.didChangeTotalAmount("8888")
+        presenter.didTapStartHistoryComposition(id: entryID)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "")
+
+        presenter.didChangeTotalAmount("1")
+        let afterEdit = presenter.viewState
+        let callsAfterEdit = spy.calculateCallCount
+
+        presenter.didTapUndoHistoryComposition()
+
+        XCTAssertEqual(spy.calculateCallCount, callsAfterEdit)
+        XCTAssertEqual(presenter.viewState, afterEdit)
+        XCTAssertEqual(presenter.viewState.totalAmountText, "1")
+    }
+
+    func testDidTapUndoHistoryComposition_WhenNoUndo_DoesNotRecalculate() {
+        let spy = CalculatingSpyInteractor()
+        let presenter = SakuttoSplitPresenter(
+            interactor: spy,
+            sessionStore: InMemoryBillSessionStore()
+        )
+        presenter.didChangeTotalAmount("35000")
+        let before = presenter.viewState
+        let callsBefore = spy.calculateCallCount
+
+        presenter.didTapUndoHistoryComposition()
+
+        XCTAssertEqual(spy.calculateCallCount, callsBefore)
+        XCTAssertEqual(presenter.viewState, before)
+    }
+
+    func testDidTapDeleteHistory_UnknownID_KeepsEntries() throws {
+        let store = InMemoryBillSessionStore()
+        let presenter = SakuttoSplitPresenter(
+            interactor: CalculatingSpyInteractor(),
+            sessionStore: store
+        )
+        presenter.didChangeTotalAmount("35000")
+        presenter.didTapSettleComplete()
+        let entryID = try XCTUnwrap(store.billHistory.first).id
+
+        presenter.didTapDeleteHistory(id: UUID())
+
+        XCTAssertEqual(store.billHistory.map(\.id), [entryID])
+        XCTAssertEqual(presenter.sessionChrome.history.map(\.id), [entryID])
     }
 
     func testDidTapStartHistoryComposition_ClearsTotalAndPaid_CalculatesOnce() throws {

@@ -76,7 +76,8 @@ final class UnpaidReminderScheduler: UnpaidReminderScheduling {
         authorizationStatus = Self.status(from: settings.authorizationStatus)
     }
 
-    private static func status(
+    /// OS の許可をアプリの 3 状態へ畳む。provisional / ephemeral は authorized
+    static func status(
         from authorizationStatus: UNAuthorizationStatus
     ) -> UnpaidReminderAuthorizationStatus {
         switch authorizationStatus {

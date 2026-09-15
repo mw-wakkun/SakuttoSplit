@@ -5,6 +5,7 @@
 //  Created by masafumi wakugawa on 2026/09/15.
 //
 
+import UserNotifications
 import XCTest
 @testable import SakuttoSplit
 
@@ -70,10 +71,27 @@ final class UnpaidReminderSchedulerTests: XCTestCase {
             "io.github.mw-wakkun.SakuttoSplit.unpaidReminder"
         )
     }
+
+    func testStatus_MapsProvisionalAndEphemeralToAuthorized() {
+        XCTAssertEqual(UnpaidReminderScheduler.status(from: .notDetermined), .notDetermined)
+        XCTAssertEqual(UnpaidReminderScheduler.status(from: .authorized), .authorized)
+        XCTAssertEqual(UnpaidReminderScheduler.status(from: .provisional), .authorized)
+        XCTAssertEqual(UnpaidReminderScheduler.status(from: .ephemeral), .authorized)
+        XCTAssertEqual(UnpaidReminderScheduler.status(from: .denied), .denied)
+    }
 }
 
 @MainActor
 final class UnpaidReminderPresenterSyncTests: XCTestCase {
+
+    func testPresenterSessionStoreInit_UsesNullReminderScheduler() {
+        let presenter = SakuttoSplitPresenter(
+            interactor: CalculatingSpyInteractor(),
+            sessionStore: InMemoryBillSessionStore()
+        )
+
+        XCTAssertTrue(presenter.reminderScheduler is NullUnpaidReminderScheduler)
+    }
 
     func testSetCollectionState_WhenNotAuthorized_DoesNotSchedule() {
         let scheduler = SpyUnpaidReminderScheduler()
@@ -208,6 +226,56 @@ final class UnpaidReminderPresenterSyncTests: XCTestCase {
         restarted.didChangeTotalAmount("35000")
         restarted.didPerformMainShare()
         XCTAssertFalse(restarted.sessionChrome.needsUnpaidReminderPrompt)
+    }
+
+    func testNeedsUnpaidReminderPrompt_WhenAuthorizationDenied_IsFalse() {
+        let scheduler = SpyUnpaidReminderScheduler()
+        scheduler.authorizationStatus = .denied
+        let setup = makeValidPresenter(scheduler: scheduler)
+
+        setup.presenter.didPerformMainShare()
+
+        XCTAssertFalse(setup.presenter.sessionChrome.needsUnpaidReminderPrompt)
+    }
+
+    func testNeedsUnpaidReminderPrompt_WhenAuthorizationAuthorized_IsFalse() {
+        let scheduler = SpyUnpaidReminderScheduler()
+        scheduler.authorizationStatus = .authorized
+        let setup = makeValidPresenter(scheduler: scheduler)
+
+        setup.presenter.didPerformMainShare()
+
+        XCTAssertFalse(setup.presenter.sessionChrome.needsUnpaidReminderPrompt)
+    }
+
+    func testDidTapSettleComplete_WhenInvalid_DoesNotCancelReminder() {
+        let scheduler = SpyUnpaidReminderScheduler()
+        scheduler.authorizationStatus = .authorized
+        let presenter = SakuttoSplitPresenter(
+            interactor: CalculatingSpyInteractor(),
+            sessionStore: InMemoryBillSessionStore(),
+            reminderScheduler: scheduler
+        )
+        XCTAssertEqual(scheduler.cancelCallCount, 0)
+
+        presenter.didTapSettleComplete()
+
+        XCTAssertEqual(presenter.viewState.validationIssue, .emptyTotalAmount)
+        XCTAssertEqual(scheduler.cancelCallCount, 0)
+        XCTAssertNil(scheduler.scheduledUnpaidCount)
+    }
+
+    func testSetCollectionState_WhenAuthorized_ReplacesUnpaidCount() throws {
+        let scheduler = SpyUnpaidReminderScheduler()
+        scheduler.authorizationStatus = .authorized
+        let setup = makeValidPresenter(scheduler: scheduler)
+        let firstCount = try XCTUnwrap(scheduler.scheduledUnpaidCount)
+        XCTAssertGreaterThan(firstCount, 1)
+
+        setup.presenter.didTapToggleCollectionSeat(id: setup.presenter.collectionState.seats[0].id)
+
+        XCTAssertEqual(scheduler.scheduledUnpaidCount, firstCount - 1)
+        XCTAssertGreaterThanOrEqual(scheduler.scheduleCallCount, 2)
     }
 
     private func makeValidPresenter(

@@ -56,6 +56,31 @@ final class ShareTextBuilderTests: XCTestCase {
         XCTAssertFalse(text.contains("不足"))
     }
 
+    func testBuild_MainShareText_ZeroDifference_UsesSurplusLabelWithZero() {
+        let groupID = UUID()
+        let text = ShareTextBuilder.build(
+            totalAmountText: "20000",
+            results: [
+                GroupCalculationResult(groupID: groupID, name: "全員", amountPerPerson: 5000, total: 20000)
+            ],
+            difference: 0
+        )
+
+        XCTAssertEqual(
+            text,
+            """
+            本日のお会計
+            総額  20,000円
+            ----------------
+            全員  1人 5,000円
+            ----------------
+            余剰  0円
+            PayPay等で送金をお願いします
+            """
+        )
+        XCTAssertFalse(text.contains("不足"))
+    }
+
     func testBuildUnpaid_IncludesOnlyGivenUnpaidSeats() {
         let groupID = UUID()
         let seats = [
