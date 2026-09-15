@@ -27,11 +27,18 @@ struct TotalAmountSection: View {
                     focusValue: .totalAmount
                 )
                 .opacity(isFocused ? 1 : 0)
+                .allowsHitTesting(isFocused)
+                .accessibilityHidden(!isFocused)
 
                 if !isFocused {
-                    unfocusedDisplay
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+                    Button {
+                        focusedField.wrappedValue = .totalAmount
+                    } label: {
+                        unfocusedDisplay
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .font(.largeTitle.monospacedDigit())

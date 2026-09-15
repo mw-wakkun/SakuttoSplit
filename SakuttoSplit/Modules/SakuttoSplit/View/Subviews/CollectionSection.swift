@@ -18,6 +18,8 @@ struct CollectionSection: View {
     @State private var haptics = CollectionHaptics()
 
     var body: some View {
+        CollectionProgressRow(status: CollectionProgressStatus(seats: seats))
+
         ForEach(seatGroups) { group in
             ForEach(group.seats) { seat in
                 CollectionSeatRow(seat: seat) {
@@ -26,13 +28,17 @@ struct CollectionSection: View {
             }
 
             if group.seats.count >= 2 {
-                Button("collection.mark_group_paid") {
+                Button {
                     markGroupPaid(group.groupID)
+                } label: {
+                    Text("collection.mark_group_paid")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.bordered)
+                .disabled(group.seats.allSatisfy(\.isPaid))
+                .opacity(group.seats.allSatisfy(\.isPaid) ? 0.45 : 1)
             }
         }
-
-        CollectionProgressRow(status: CollectionProgressStatus(seats: seats))
 
         UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
     }
@@ -89,7 +95,7 @@ private final class CollectionHaptics {
     }
 }
 
-/// Form が ProgressView を独立行にすると、直前の「全員済」をラベルにして完了表示になる
+/// Form の ProgressView は隣行の「全員済」をラベルに盗むため、自前のバーにする
 private struct CollectionProgressRow: View {
     let status: CollectionProgressStatus
 
@@ -98,24 +104,13 @@ private struct CollectionProgressRow: View {
         case .empty:
             EmptyView()
         case .inProgress, .allPaid:
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    statusText
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    ProgressView(
-                        value: Double(status.paidCount),
-                        total: Double(status.seatCount)
-                    ) {
-                        EmptyView()
-                    } currentValueLabel: {
-                        EmptyView()
-                    }
-                    .progressViewStyle(.linear)
-                    .labelsHidden()
-                }
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 8) {
+                statusText
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                CollectionPaidBar(paidCount: status.paidCount, seatCount: status.seatCount)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
         }
     }
@@ -130,6 +125,30 @@ private struct CollectionProgressRow: View {
         case .inProgress(let unpaidCount, let seatCount):
             Text("collection.progress \(unpaidCount) \(seatCount)")
         }
+    }
+}
+
+private struct CollectionPaidBar: View {
+    let paidCount: Int
+    let seatCount: Int
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.2))
+                Capsule()
+                    .fill(Color.accentColor)
+                    .frame(width: barWidth(in: geo.size.width))
+            }
+        }
+        .frame(height: 6)
+        .accessibilityHidden(true)
+    }
+
+    private func barWidth(in totalWidth: CGFloat) -> CGFloat {
+        guard seatCount > 0 else { return 0 }
+        return totalWidth * CGFloat(paidCount) / CGFloat(seatCount)
     }
 }
 

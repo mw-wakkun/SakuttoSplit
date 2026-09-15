@@ -105,17 +105,17 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
                 .safeAreaInset(edge: .top, spacing: 0) {
                     memberSetUndoBanner
                 }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if focusedField != nil {
+                        keyboardAccessoryBar
+                    }
+                }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         restoreToolbarItem
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         moreMenuToolbarItem
-                    }
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        keyboardPrimaryAction
-                        Button("action.done") { focusedField = nil }
                     }
                 }
             }
@@ -129,9 +129,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         }
         .onAppear {
             adsController.refreshAdFreeState()
-            Task { @MainActor in
-                focusTotalAmountIfNeeded()
-            }
+            scheduleInitialTotalAmountFocus()
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -279,9 +277,7 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
         let canSettle = presenter.viewState.validationIssue == nil
         presenter.didTapSettleComplete()
         guard canSettle else { return }
-        Task { @MainActor in
-            focusTotalAmountIfNeeded()
-        }
+        scheduleInitialTotalAmountFocus()
         guard let rootViewController = rootViewControllerBox.rootViewController else {
             return
         }
@@ -289,6 +285,14 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
     }
 
     /// 総額が空かつ VoiceOver オフのときだけ総額へフォーカスする。復元・編成適用では呼ばない
+    private func scheduleInitialTotalAmountFocus() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else { return }
+            focusTotalAmountIfNeeded()
+        }
+    }
+
     private func focusTotalAmountIfNeeded() {
         guard presenter.viewState.totalAmountText.isEmpty else { return }
         guard !UIAccessibility.isVoiceOverRunning else { return }
@@ -473,6 +477,20 @@ struct SakuttoSplitView<Presenter: SakuttoSplitPresenterProtocol>: View {
             Image(systemName: "ellipsis.circle")
         }
         .accessibilityLabel("menu.more")
+    }
+
+    /// numberPad の keyboard toolbar は起動直後に欠けることがある。フォーカス中は常に出す
+    private var keyboardAccessoryBar: some View {
+        HStack(spacing: 12) {
+            Spacer(minLength: 0)
+            keyboardPrimaryAction
+            Button("action.done") { focusedField = nil }
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(.bar)
     }
 
     @ViewBuilder
