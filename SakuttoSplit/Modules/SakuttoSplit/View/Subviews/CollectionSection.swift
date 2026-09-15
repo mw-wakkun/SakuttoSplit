@@ -18,11 +18,6 @@ struct CollectionSection: View {
     @State private var haptics = CollectionHaptics()
 
     var body: some View {
-        let unpaidCount = seats.reduce(into: 0) { count, seat in
-            if !seat.isPaid { count += 1 }
-        }
-        let paidFraction = seats.isEmpty ? 0.0 : Double(seats.count - unpaidCount) / Double(seats.count)
-
         ForEach(seatGroups) { group in
             ForEach(group.seats) { seat in
                 CollectionSeatRow(seat: seat) {
@@ -37,25 +32,9 @@ struct CollectionSection: View {
             }
         }
 
-        progressRow(unpaidCount: unpaidCount, paidFraction: paidFraction)
+        CollectionProgressRow(status: CollectionProgressStatus(seats: seats))
 
         UnpaidShareButton(shareText: unpaidShareText, isEnabled: isUnpaidShareEnabled)
-    }
-
-    @ViewBuilder
-    private func progressRow(unpaidCount: Int, paidFraction: Double) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ProgressView(value: paidFraction)
-            if unpaidCount == 0 {
-                Text("collection.all_paid")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("collection.progress \(unpaidCount) \(seats.count)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
     }
 
     private var seatGroups: [SeatGroup] {
@@ -107,6 +86,50 @@ private final class CollectionHaptics {
     func success() {
         notification.prepare()
         notification.notificationOccurred(.success)
+    }
+}
+
+/// Form が ProgressView を独立行にすると、直前の「全員済」をラベルにして完了表示になる
+private struct CollectionProgressRow: View {
+    let status: CollectionProgressStatus
+
+    var body: some View {
+        switch status {
+        case .empty:
+            EmptyView()
+        case .inProgress, .allPaid:
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    statusText
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    ProgressView(
+                        value: Double(status.paidCount),
+                        total: Double(status.seatCount)
+                    ) {
+                        EmptyView()
+                    } currentValueLabel: {
+                        EmptyView()
+                    }
+                    .progressViewStyle(.linear)
+                    .labelsHidden()
+                }
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    @ViewBuilder
+    private var statusText: some View {
+        switch status {
+        case .empty:
+            EmptyView()
+        case .allPaid:
+            Text("collection.all_paid")
+        case .inProgress(let unpaidCount, let seatCount):
+            Text("collection.progress \(unpaidCount) \(seatCount)")
+        }
     }
 }
 

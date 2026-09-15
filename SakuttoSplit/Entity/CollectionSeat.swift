@@ -91,6 +91,10 @@ struct CollectionState: Equatable {
         seats.filter(\.isPaid).map(\.id.rawValue)
     }
 
+    var progressStatus: CollectionProgressStatus {
+        CollectionProgressStatus(seats: seats)
+    }
+
     /// 妥当な会計のときだけ席を作る。済は席 ID で引き継ぎ、今いないキーは捨てる
     static func reconcile(
         groups: [AttendeeGroupDraft],
@@ -113,5 +117,49 @@ struct CollectionState: Equatable {
             )
         }
         return CollectionState(seats: seats)
+    }
+}
+
+/// 回収進捗の表示分岐。席が無いときは全員済にしない
+enum CollectionProgressStatus: Equatable {
+    case empty
+    case inProgress(unpaidCount: Int, seatCount: Int)
+    case allPaid(seatCount: Int)
+
+    init(seats: [CollectionSeat]) {
+        let unpaidCount = seats.reduce(into: 0) { count, seat in
+            if !seat.isPaid { count += 1 }
+        }
+        self.init(unpaidCount: unpaidCount, seatCount: seats.count)
+    }
+
+    init(unpaidCount: Int, seatCount: Int) {
+        if seatCount <= 0 {
+            self = .empty
+        } else if unpaidCount == 0 {
+            self = .allPaid(seatCount: seatCount)
+        } else {
+            self = .inProgress(unpaidCount: unpaidCount, seatCount: seatCount)
+        }
+    }
+
+    var paidCount: Int {
+        switch self {
+        case .empty:
+            return 0
+        case .inProgress(let unpaidCount, let seatCount):
+            return seatCount - unpaidCount
+        case .allPaid(let seatCount):
+            return seatCount
+        }
+    }
+
+    var seatCount: Int {
+        switch self {
+        case .empty:
+            return 0
+        case .inProgress(_, let seatCount), .allPaid(let seatCount):
+            return seatCount
+        }
     }
 }

@@ -180,4 +180,66 @@ final class CollectionSeatTests: XCTestCase {
         XCTAssertTrue(state.seats.allSatisfy { $0.amountPerPerson == 2500 })
         XCTAssertEqual(state.seats.map(\.id.groupID), [groupID, groupID])
     }
+
+    func testProgressStatus_UnpaidSeats_AreInProgress_NotAllPaid() {
+        let seats = CollectionSeat.make(
+            groupID: UUID(),
+            name: "一般",
+            count: 4,
+            amountPerPerson: 6200,
+            expandMaxCount: InputLimits.collectionExpandMaxCount
+        )
+
+        XCTAssertEqual(
+            CollectionProgressStatus(seats: seats),
+            .inProgress(unpaidCount: 4, seatCount: 4)
+        )
+        XCTAssertEqual(CollectionProgressStatus(seats: seats).paidCount, 0)
+        XCTAssertEqual(CollectionState(seats: seats).progressStatus, .inProgress(unpaidCount: 4, seatCount: 4))
+    }
+
+    func testProgressStatus_AllChecked_IsAllPaid() {
+        let groupID = UUID()
+        let seats = CollectionSeat.make(
+            groupID: groupID,
+            name: "一般",
+            count: 2,
+            amountPerPerson: 5000,
+            expandMaxCount: InputLimits.collectionExpandMaxCount,
+            paidSeatKeys: [
+                CollectionSeatID(groupID: groupID, index: 0).rawValue,
+                CollectionSeatID(groupID: groupID, index: 1).rawValue
+            ]
+        )
+
+        XCTAssertEqual(CollectionProgressStatus(seats: seats), .allPaid(seatCount: 2))
+        XCTAssertEqual(CollectionProgressStatus(seats: seats).paidCount, 2)
+    }
+
+    func testProgressStatus_EmptySeats_IsNotAllPaid() {
+        XCTAssertEqual(CollectionProgressStatus(unpaidCount: 0, seatCount: 0), .empty)
+        XCTAssertEqual(CollectionProgressStatus(seats: []), .empty)
+        XCTAssertEqual(CollectionState.empty.progressStatus, .empty)
+    }
+
+    func testProgressStatus_MixedPaid_CountsUnpaidOnly() {
+        let groupID = UUID()
+        let seats = CollectionSeat.make(
+            groupID: groupID,
+            name: "一般",
+            count: 5,
+            amountPerPerson: 1000,
+            expandMaxCount: InputLimits.collectionExpandMaxCount,
+            paidSeatKeys: [
+                CollectionSeatID(groupID: groupID, index: 0).rawValue,
+                CollectionSeatID(groupID: groupID, index: 3).rawValue
+            ]
+        )
+
+        XCTAssertEqual(
+            CollectionProgressStatus(seats: seats),
+            .inProgress(unpaidCount: 3, seatCount: 5)
+        )
+        XCTAssertEqual(CollectionProgressStatus(seats: seats).paidCount, 2)
+    }
 }

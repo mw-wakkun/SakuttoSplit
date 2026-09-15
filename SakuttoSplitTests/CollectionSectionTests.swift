@@ -10,6 +10,23 @@ import XCTest
 
 final class CollectionSectionTests: XCTestCase {
 
+    func testProgressCopy_UnpaidIsRemaining_NotAllPaid() {
+        XCTAssertEqual(
+            String(localized: "collection.progress \(5) \(5)"),
+            "未払い 5 / 5"
+        )
+        XCTAssertEqual(String(localized: "collection.all_paid"), "全員回収済み")
+        XCTAssertEqual(String(localized: "collection.mark_group_paid"), "全員済")
+        XCTAssertNotEqual(
+            String(localized: "collection.progress \(5) \(5)"),
+            String(localized: "collection.all_paid")
+        )
+        XCTAssertNotEqual(
+            String(localized: "collection.progress \(5) \(5)"),
+            String(localized: "collection.mark_group_paid")
+        )
+    }
+
     func testUnpaidShareButton_IsEnabled_MatchesFlag() {
         XCTAssertTrue(UnpaidShareButton(shareText: Self.unpaidReceipt, isEnabled: true).isEnabled)
         XCTAssertFalse(UnpaidShareButton(shareText: "", isEnabled: false).isEnabled)
